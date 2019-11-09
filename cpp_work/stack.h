@@ -51,8 +51,11 @@ struct RPNstack
 	int count;
 };
 
-void buildRPN(char (&input)[100],RPNstack &lhs);
+int buildRPN(char (&input)[100],RPNstack &lhs,int current = 0);
 void RPN(RPNstack& sorted, RPNstack& reversed);
 float solveRPN(RPNstack & RS);
+float Subs(RPNstack RS, int n);
+float solve(RPNstack& lhs, RPNstack& rhs);
 
 #endif
+

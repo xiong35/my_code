@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <iostream>
 
+int x_flag;
+
 //NumStack methods
 float NumStack::pop()//need to check pt value
 {
@@ -24,15 +26,14 @@ void ChStack::push(char n)
 	chlist[++pt] = n;
 }
 
-void buildRPN(char (&input)[100],RPNstack &lhs)
+int buildRPN(char (&input)[100],RPNstack &lhs,int current)
 {
-	int i = 0;
+	int i = current;
 	float temp = 0;
 	int num_flag = 0;
-	int x_flag = 0;
 	int dot_flag = 0;
 	float dev = 0.1;
-	
+
 	for(; input[i] != '\0';)//=='\n' may cause bug(cin)
 	{
 		if (IS_NUM(input[i]))//ok
@@ -60,15 +61,15 @@ void buildRPN(char (&input)[100],RPNstack &lhs)
 				lhs.ns.push(temp);//push num in stack
 				lhs.cs.push(cPH);
 				lhs.count++;
-				
+
 				lhs.cs.push('*');//push the omitted *
 				lhs.ns.push(nPH);
 				lhs.count++;
-				
+
 				lhs.cs.push(input[i++]);//push bracket
 				lhs.ns.push(nPH);
 				lhs.count++;
-				
+
 				num_flag = 0;//reset
 				temp = 0;
 				dev = 0.1;
@@ -106,14 +107,20 @@ void buildRPN(char (&input)[100],RPNstack &lhs)
 			}
 			else
 			{
-				if (!num_flag )//bug : can't input(-5+6)  
+				if (!num_flag )//bug : can't input(-5+6)
 				{
-					std::cout << "invalid input: ecpect a number befor" << input[i] << "\n";
-					exit(-2);
+					if (lhs.cs.chlist[lhs.count-1] != 'x')
+					{
+						std::cout << "invalid input: ecpect a number befor" << input[i] << "\n";
+						exit(-2);
+					}
 				}
-				lhs.ns.push(temp);//push num in stack
-				lhs.cs.push(cPH);
-				lhs.count++;
+				if (lhs.cs.chlist[lhs.count - 1] != 'x')
+				{
+					lhs.ns.push(temp);//push num in stack
+					lhs.cs.push(cPH);
+					lhs.count++;
+				}
 
 				lhs.cs.push(input[i++]);//push operator
 				lhs.ns.push(nPH);
@@ -128,7 +135,14 @@ void buildRPN(char (&input)[100],RPNstack &lhs)
 		}
 		else if(input[i] == '=')
 		{
-			
+			if (num_flag)
+			{
+				lhs.ns.push(temp);//push num in stack
+				lhs.cs.push(cPH);
+				lhs.count++;
+			}
+			current = i + 1;
+			return current;
 		}
 		else
 		{
@@ -142,7 +156,7 @@ void buildRPN(char (&input)[100],RPNstack &lhs)
 		lhs.cs.push(cPH);
 		lhs.count++;
 	}
-	return;
+	return current;
 }
 
 void RPN(RPNstack& sorted, RPNstack& reversed)
@@ -180,7 +194,7 @@ void RPN(RPNstack& sorted, RPNstack& reversed)
 			{
 				if (sorted.cs.chlist[i] == '/' || sorted.cs.chlist[i] == '*')
 				{
-					while (temp.chlist[temp.pt] != '+'&& 
+					while (temp.chlist[temp.pt] != '+'&&
 						temp.chlist[temp.pt] != '-'&& temp.chlist[temp.pt] != '(' && temp.pt>-1)
 					{
 						reversed.cs.push(temp.pop());
@@ -248,4 +262,36 @@ float solveRPN(RPNstack & RS)
 		i++;
 	}
 	return temp.numlist[0];
+}
+
+float Subs(RPNstack RS, int n)
+{
+	int i = 0;
+	while (i < RS.count)
+	{
+		if (RS.cs.chlist[i] == 'x')
+		{
+			RS.cs.chlist[i] = cPH;
+			RS.ns.numlist[i] = n;
+		}
+		i++;
+	}
+	RPNstack temp;
+	temp.count = 0;
+	RPN(RS, temp);
+	return solveRPN(temp);
+}
+
+float solve(RPNstack& lhs, RPNstack& rhs)
+{
+	float y1, y2;
+	y1 = Subs(lhs, 0) - Subs(rhs, 0);
+	y2 = Subs(lhs, 20) - Subs(rhs, 20);
+	if (EQUAL(y1,y2))
+	{
+		return nPH;
+	}
+	y1 = (y2 - y1) / 20;
+	y2 = y2 / y1;
+	return (20 - y2);
 }
