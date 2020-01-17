@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-# dem
 # demo1
 """ x = np.linspace(0,10,30)
 plt.plot(x,np.sin(x),'--') """
@@ -51,7 +50,7 @@ x = np.linspace(0, 10, 100)
 y = np.sin(x)
 y2 = np.cos(x)
 plt.plot(x, y, "--", label="sin(x)")
-plt.plot(x, y2, "-", c = 'dimgray',label="coS(x)")
+plt.plot(x, y2, "-bo", c = 'dimgray',label="coS(x)")
 plt.ylim(-1.5, 1.5)
 plt.xlabel("variable x")
 plt.ylabel("variable y")
@@ -69,5 +68,7 @@ plt.annotate('maximum', xy=(np.pi/2, 1),
              c='dimgray', arrowprops=dict(arrowstyle='fancy',
                                           connectionstyle='angle3', color='gray'))
 plt.legend(loc='upper center',frameon=True,ncol=2)
+
+
 
 plt.show()
