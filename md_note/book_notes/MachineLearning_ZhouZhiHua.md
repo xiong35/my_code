@@ -323,4 +323,49 @@ $$
 l(\beta)=\displaystyle\sum_{i=1}^m(-y_i\beta^T\hat{x}_i+ln(1+e^{\beta^T\hat{x}}))
 $$
 证明如下：  
-![maximum likelihood](images/maximum_likelihood.jpg)
+![maximum likelihood](images/maximum_likelihood.jpg)  
+$l(\beta)$是一个关于$\beta$的高阶可导连续凸函数，根据凸优化理论，可用牛顿法或者梯度下降迭代求解  
+
+### 3.4 线性判别分析
+
+> LDA : Linear Disciminant Analysis
+
+给定训练样例集，设法将样例投影到一条直线上，使得同类的投影点尽可能接近，异类投影点尽可能远离。在对新样本进行分析时，将其投影到同样的这条直线上，再根据投影点的位置来确定新样本的类别  
+  
+给定数据集$D=\{(x_i,y_i)\}_{i=1}^m,y_i\in \{0,1\}$，令$X_i, \mu_i,\Sigma_i$分别为第$i$类示例的集合、均值向量、协方差矩阵，若将数据投影到直线$w$上，则两类样本的中心在直线上的投影分别是$w^T\mu_0,w^T\mu_1$；若将所有样本点投影到直线上，两类样本的协方差分别为$w^T\Sigma_0w,w^T\Sigma_1w$？? 
+   
+欲使同类样本尽可能近，可以让同类样本的协方差尽可能小，即使$w^T\Sigma_0w+w^T\Sigma_1w$尽可能小；欲使异类样本尽可能远离，可以让异类样本中心距离尽可能大，即使$||w^T\mu_0-w^T\mu_1||_2^2$尽可能大。同时考虑两者，可得到最大化目标：  
+$$
+\begin{aligned}
+J& = \frac{||w^T\mu_0-w^T\mu_1||_2^2}{w^T\Sigma_0w+w^T\Sigma_1w}
+\\
+&=\frac{w^T(\mu_0-\mu_1)(\mu_0-\mu_1)^Tw}{w^T(\Sigma_0+\Sigma_1)w}
+\end{aligned}
+$$
+定义“类内散度矩阵”：
+$$
+\begin{aligned}
+S_w&=\Sigma_0+\Sigma_1\\
+& = \displaystyle\sum_{x\in X_0}(x-\mu_0)(x-\mu_0)^T+\displaystyle\sum_{x\in X_1}(x-\mu_1)(x-\mu_1)^T
+\end{aligned}
+$$
+以及“类间散度矩阵”：  
+$$
+S_b=(\mu_0-\mu_1)(\mu_0-\mu_1)^T
+$$
+则J重写为：  
+$$
+J=\frac{w^TS_bw}{w^TS_ww}
+$$
+这就是LDA欲最大化的目标，即$S_b,S_w$的“广义瑞利商”  
+  
+如何确定$w$呢，注意到$J$的分子分母都是关于$w$的二次项，所以解和$w$的长度无关，仅与方向有关，不失一般性，令$w^TS_ww=1$，则$J$等价于：  
+$$
+\min_w\quad -w^TS_bw\\
+s.t.\quad w^TS_ww=1
+$$
+由拉格朗日乘子法，上式等价于  
+$$
+S_bw=\lambda S_ww
+$$
+其中$\lambda$是拉格朗日乘子？?
