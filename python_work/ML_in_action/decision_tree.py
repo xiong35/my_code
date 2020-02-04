@@ -36,6 +36,21 @@ def createDataSet():
                [0, 0, 0,'no']]
     labels = ['no surfacing', 'flippers','true']
     return dataSet, labels
+    
+""" 
+def createDataSet():
+    data = pd.read_csv('/home/ylxiong/Documents/mushrooms.csv', nrows=100)
+    dataSet = data.values.tolist()
+
+    labels = ['cap-shape', 'cap-surface', 'cap-color', 'bruises',
+              'odor', 'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color',
+              'stalk-shape', 'talk-root', 'stalk-surface-above-ring',
+              'stalk-surface-below-ring', 'stalk-color-above-ring',
+              'stalk-color-below-ring', 'veil-type', 'veil-color',
+              'ring-number', 'ring-type', 'spore-print-color',
+              'population	habitat']
+    return dataSet, labels
+ """
 
 
 # split the data
