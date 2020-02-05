@@ -28,13 +28,25 @@ def createVocabList(dataSet):
 # for each comment, create a vector
 # vocabList rf the set of all the elements
 # inputSet  rf the set to be converted to vector
-
-def setOfWords2Vec(vocabList, inputSet):
+""" 
+def bagOfWords2Vec(vocabList, inputSet):
     returnVec = [0]*len(vocabList)
     for word in inputSet:
         if word in vocabList:
             returnVec[vocabList.index(word)] = 1
     return returnVec
+ """
+
+# V2.0 : bag of words
+
+
+def bagOfWords2Vec(vocabList, inputSet):
+    returnVec = [0]*len(vocabList)
+    for word in inputSet:
+        if word in vocabList:
+            returnVec[vocabList.index(word)] += 1
+    return returnVec
+
 
 """ 
 naive Bayes:
@@ -45,6 +57,7 @@ w rf words
 
 # NB:
 # p1 rf p(negative)
+
 
 def trainNB0(trainMatrix, trainCategory):
     numTrainDocs = len(trainMatrix)
@@ -107,13 +120,23 @@ def testNB():
     # create a matrix of 0/1 vectors
     trainMatrix = []
     for postinDoc in listOPosts:
-        trainMatrix.append(setOfWords2Vec(myVocabList, postinDoc))\
-    # calculate p1,p0
+        trainMatrix.append(bagOfWords2Vec(myVocabList, postinDoc))\
+            # calculate p1,p0
     p0V, p1V, pNe = trainNB0(trainMatrix, listClasses)
-    testEntry = ['love','my','dalmation']
-    thisDoc = np.array(setOfWords2Vec(myVocabList,testEntry))
-    print(testEntry,'classified as: ',classifyNB(thisDoc,p0V,p1V,pNe))
-    testEntry = ['stupid','garbage']
-    thisDoc = np.array(setOfWords2Vec(myVocabList,testEntry))
-    print(testEntry,'classified as: ',classifyNB(thisDoc,p0V,p1V,pNe))
-    
+    testEntry = ['love', 'my', 'dalmation']
+    thisDoc = np.array(bagOfWords2Vec(myVocabList, testEntry))
+    print(testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pNe))
+    testEntry = ['stupid', 'garbage']
+    thisDoc = np.array(bagOfWords2Vec(myVocabList, testEntry))
+    print(testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pNe))
+
+testNB()
+
+# preprocess the text
+
+def textParse(bigString):
+    import re
+    listOfTokens = re.split(r'\w*', bigString)
+    return [tok.lower() for tok in listOfTokens if len(tok) > 2]
+
+
