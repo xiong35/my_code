@@ -24,7 +24,7 @@ dataMatrix, labelMatrix = loadDataSet(
 def sigmoid(inX):
     return 1.0/(1.0+np.exp(-1.0*inX))
 
-
+""" 
 def gradientAscent(dataMatrix, classMatrix):
     dataMatrix = np.mat(dataMatrix)
     labelMatrix = np.mat(classMatrix).transpose()
@@ -40,13 +40,32 @@ def gradientAscent(dataMatrix, classMatrix):
         weights = weights + alpha*np.dot(dataMatrix.transpose(), error)
     return weights
 
-
 weights = gradientAscent(dataMatrix, labelMatrix)
+ """
+
+def stocGradAscent(dataMatrix, labelMatrix, numIter=150):
+    m, n = np.shape(dataMatrix)
+    weights = np.ones(n)
+    for j in range(numIter):
+        dataIndex = list(range(m))
+        for i in range(m):
+            alpha = 16/(1.0+j+i)+0.04
+            rangeIndex = int(np.random.uniform(0,len(dataIndex)))
+            h = sigmoid(sum(dataMatrix[i]*weights))
+            error = labelMatrix[rangeIndex] - h
+            weights = weights + alpha*np.dot(error, dataMatrix[i])
+            del(dataIndex[rangeIndex])
+    return weights
 
 
-def plotBestFit(wei):
+weights = stocGradAscent(dataMatrix, labelMatrix)
+# [weights] is a list istead of a matrix
+print(weights)
+
+
+def plotBestFit(weights):
     import matplotlib.pyplot as plt
-    weights = wei.getA()
+    # weights = weights.getA()
     dataMatrix, labelMatrix = \
         loadDataSet('/home/ylxiong/Documents/ionosphere.data')
     n = len(dataMatrix)
