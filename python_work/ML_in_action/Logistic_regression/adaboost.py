@@ -69,8 +69,10 @@ def buildStump(dataArray, classLabels, D):
 
 
 ##### - combine nodes together - #####
+# DS: decision stump, a weak classifier
+# not the only one, but the most popular one
 
-def adeBoostTrainDS(dataArray, classLabels, numIter=40):
+def adaBoostTrainDS(dataArray, classLabels, numIter=40):
     weakClassArr = []
     m = np.shape(dataArray)[0]
     D = np.mat(np.ones((m, 1))/m)
@@ -79,7 +81,8 @@ def adeBoostTrainDS(dataArray, classLabels, numIter=40):
         bestStump, error, classEst = buildStump(
             dataArray, classLabels, D)
         print('D: ', D.T)
-        alpha = float(0.5*log((1.0-error)/max(error, 1e-16)))
+        # prvent 0 deviation
+        alpha = float(0.5*np.log((1.0-error)/max(error, 1e-16)))
         bestStump['alpha'] = alpha
         weakClassArr.append(bestStump)
         print('classEst:', classEst.T)
@@ -94,4 +97,19 @@ def adeBoostTrainDS(dataArray, classLabels, numIter=40):
         print('errorRate:', errorRate)
         if errorRate == 0:
             break
-    return weakClassArr# FIXME
+    return weakClassArr
+
+
+### - classify - ###
+
+def adaClassify(datToClassify, classifierArr):
+    dataMatrix = np.mat(datToClassify)
+    m = np.shape(dataMatrix)[0]
+    aggClassEst = np.mat(np.zeros((m, 1)))
+    for i in range(len(classifierArr)):
+        classEst = stumpClassify(dataMatrix, classifierArr[i]['dim'],
+                                 classifierArr[i]['thresh'],
+                                 classifierArr[i]['ineq'])
+        aggClassEst += classifierArr[i]['alpha']*classEst
+        print(aggClassEst)
+    return np.sign(aggClassEst)
