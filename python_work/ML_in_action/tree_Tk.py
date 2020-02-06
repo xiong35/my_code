@@ -24,11 +24,25 @@ def reDraw(tolS, tolN):
     reDraw.a.plot(CART.testData[:, 0].T.tolist()[0], yHat)
     reDraw.canvas.draw()
     
-def 
+def getInputs():
+    try: tolN = int(tolNentry.get())
+    except:
+        tolN = 10
+        print("enter Integer for tolN")
+        tolNentry.delete(0,END)
+        tolNentry.insert(0,'10')
+    try: tolS = float(tolSentry.get())
+    except:
+        tolS = 1.0
+        print("enter Float for tolS")
+        tolSentry.delete(0,END)
+        tolSentry.insert(0,'1,0')
+    return tolN, tolS
 
 
 def drawNewTree():
-    pass
+    tolN,tolS =getInputs()
+    reDraw(tolS, tolN)
 
 
 root = Tk()
