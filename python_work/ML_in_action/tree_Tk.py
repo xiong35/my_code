@@ -6,6 +6,7 @@ from tkinter import *
 import matplotlib
 matplotlib.use('TkAgg')
 
+random.seed(7)
 
 def reDraw(tolS, tolN):
     reDraw.f.clf()

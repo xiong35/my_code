@@ -1,7 +1,7 @@
 
 import numpy as np
 import random
-from math import sin
+from math import sin,log
 
 
 def binSplitDataSet(dataSet, feature, value):
@@ -135,7 +135,7 @@ def prune(tree, testData):
 # random.seed(7)
 
 def y(x):
-    y = random.uniform(-0.05, 0.05) + sin(x/10.0)
+    y = random.uniform(-0.05, 0.05) + sin(x/10.0)+log(1+x/10.0)
     return y
 
 
@@ -174,7 +174,6 @@ def treeForecast(tree, inData, modelEval):
     # inData is a 1*m matrix
     if inData.tolist()[0][tree['spInd']] > tree['spVal']:
         if isTree(tree['left']):
-            # TD : merge the two conditions together
             return treeForecast(tree['left'], inData, modelEval)
         else:
             return modelEval(tree['left'], inData)
