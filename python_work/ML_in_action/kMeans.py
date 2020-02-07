@@ -1,22 +1,21 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import cnames
 
 # set K
-k = 7
+k = 5
 
 # set the random seed
-np.random.seed(666)
+np.random.seed(7777777)
 
-colorList = list(cnames.keys())
+fig = plt.figure()
 
 
-def createOneDataSet(n=200, mean=[0, 0], cov=[[1, 0], [0, 1]],tag=1):
+def createOneDataSet(n=200, mean=[0, 0], cov=[[1, 0], [0, 1]]):
     x, y = np.random.multivariate_normal(mean, cov, n).T
     dataSet = []
-    plt.scatter(x,y,color=colorList[tag*10])
-    plt.show()
+    global fig
+    plt.scatter(x, y, s=10, alpha=0.5)
     for i in range(n):
         curData = []
         curData.append(x[i])
@@ -32,7 +31,7 @@ def createDataSet(k):
         mean = [np.random.uniform(-10, 10), np.random.uniform(-10, 10)]
         cov = np.random.randn(2, 2)
         n = np.random.randint(50, 500)
-        dataSet.extend(createOneDataSet(n, mean, cov, i))
+        dataSet.extend(createOneDataSet(n, mean, cov))
     return dataSet
 
 
@@ -55,6 +54,14 @@ def randCent(dataSet, k):
     return centroid
 
 
+def scatter(curFig, centroid):
+    centX = centroid[:, 0].T.tolist()[0]
+    centY = centroid[:, 1].T.tolist()[0]
+    plt.scatter(centX, centY, c='black', s=20, marker='+')
+    plt.pause(0.1)
+    plt.show()
+
+
 # kMeans
 def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
     numOfData = dataSet.shape[0]
@@ -67,6 +74,8 @@ def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
     step = 0
     iterTime = 10
     while clusterChanged and (step < iterTime):
+        curFig = fig
+        scatter(curFig, centroid)
         clusterChanged = False
         for indexOfData in range(numOfData):
             minDist = np.inf
@@ -81,21 +90,12 @@ def kMeans(dataSet, k, distMeas=distEclud, createCent=randCent):
             if clusterAssment[indexOfData, 0] != minIndex:
                 clusterChanged = True
             clusterAssment[indexOfData, :] = minIndex, minDist**2
-        print(step)
         step += 1
         for center in range(k):
             ptsInCluster = dataSet[np.nonzero(
                 clusterAssment[:, 0].A == center)[0]]
             if len(ptsInCluster) != 0:
                 centroid[center, :] = np.mean(ptsInCluster, axis=0)
-        # show
-        x = dataSet[:, 0].T.tolist()[0]
-        y = dataSet[:, 1].T.tolist()[0]
-        plt.hist2d(x, y, bins=300)
-        centX = centroid[:, 0].T.tolist()[0]
-        centY = centroid[:, 1].T.tolist()[0]
-        plt.scatter(centX, centY)
-        plt.show()
     return centroid, clusterAssment
 
 
@@ -104,21 +104,23 @@ dataSet = createDataSet(k)
 dataSet = np.mat(dataSet)
 
 # show the data
-x = dataSet[:, 0].T.tolist()[0]
-y = dataSet[:, 1].T.tolist()[0]
-plt.hist2d(x, y, bins=300)
+# x = dataSet[:, 0].T.tolist()[0]
+# y = dataSet[:, 1].T.tolist()[0]
+# plt.hist2d(x, y, bins=300)
 
 # scatter the centroid
+plt.ion()
 centroid, _ = kMeans(dataSet, k)
 centroid = np.mat(centroid)
 
 # show the data
-x = dataSet[:, 0].T.tolist()[0]
-y = dataSet[:, 1].T.tolist()[0]
-plt.hist2d(x, y, bins=300)
+# x = dataSet[:, 0].T.tolist()[0]
+# y = dataSet[:, 1].T.tolist()[0]
+# plt.hist2d(x, y, bins=300)
 
-centX = centroid[:, 0].T.tolist()[0]
-centY = centroid[:, 1].T.tolist()[0]
-plt.scatter(centX, centY)
+# centX = centroid[:, 0].T.tolist()[0]
+# centY = centroid[:, 1].T.tolist()[0]
+# plt.scatter(centX, centY)
 
-plt.show()
+plt.pause(20)
+
