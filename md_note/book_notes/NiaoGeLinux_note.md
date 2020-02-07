@@ -744,7 +744,6 @@ e.g.
 | .*       | 任意字符无限次                 |
 | \\\{\\\} | 指定前一个字符次数（需要转义） |
 
-
 e.g.
 
     grep '[^a-z]22'
@@ -752,3 +751,54 @@ e.g.
     grep "\.$"  "行尾的点
     grep "^$"  "空行
     grep "1[0-9]\{2,\}"  "1后面至少2个其他数字
+
+**sed, printf, awk, diff**：略
+
+---
+
+## 12 shell脚本
+
+[bash script](shell_demos.sh)
+
+不同打开方式执行效果不同
+
+- sh xxx.sh：在子bash中打开
+- source xxx.sh：在父进程中打开
+
+**test命令**：测试一些东西，和条件语句一起用
+
+test -xxx
+
+| 参数       | 效果              |
+| ---------- | ----------------- |
+| -e         | exist             |
+| -f         | -e and is file    |
+| -d         | ~dict             |
+| -L         | ~link             |
+| -rwx       | -                 |
+| -eq/ne     | equal/not~        |
+| -gt/lt     | greater/less than |
+| -ge/le     | great or equal    |
+| -z+str     | len(str)==0       |
+| -n+str     | ~!=0              |
+| str1==str2 | -                 |
+| xx -a xx   | and               |
+| xx -o xx   | or                |
+
+另一种写法：空格用[ _ ]表示
+
+    [_"${var1}"_==_"${var2}"_] || xxxx
+
+**argc, argv**  
+
+- ${#} == argc
+- ${@} == argv[1:]
+- ${1/2/3} == argv[1/2/3]
+
+**shift**：略
+
+### 脚本调试
+
+    sh -[nvx] xxx.sh
+
+- -v：
