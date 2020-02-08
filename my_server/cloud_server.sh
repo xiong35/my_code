@@ -47,11 +47,13 @@ ll yum*
 
 pip install jupyter
 
+# PATH="${PATH}:/usr/local/python/bin"
+
 jupyter notebook --generate-config --allow-root
 
 python
 from notebook.auth import passwd
-passwd()
+# passwd()
 
 vim ~/.jupyter/jupyter_notebook_config.py
 
@@ -64,3 +66,25 @@ vim ~/.jupyter/jupyter_notebook_config.py
 
 # remember to turn the 7777 port on!!
 # jupyter notebook --allow-root
+
+################################################################
+
+# tensorflow
+
+pip install tensorflow
+pip install keras
+
+
+
+################################################################
+
+# git
+
+yum install git
+
+ssh-keygen -t rsa -C "2242787668@qq.com"
+
+vim ~/.ssh/id_rsa.pub
+# add it to the github
+
+git clone git@github.com:xiong35/my_code2242787668.git
