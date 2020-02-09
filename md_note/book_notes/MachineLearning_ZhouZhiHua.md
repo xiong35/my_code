@@ -92,7 +92,7 @@ $$
 
 > Receiver Operating Characteristic / Area Under Curve
 
-![Receiver Operating Character](images/ROC.jpg)
+![Receiver Operating Character](http://q5f6gj3dx.bkt.clouddn.com/ROC.jpg)
 
 反映的是『对结果预测置信度**排序能力**』的好坏：先把所有点设为F（阈值设为最大，从(0,0)开始），从高到低，依次把点设为正例（逐步降低阈值），如果是真正例就向上走一步（让AUC变大更快），否则向右走一步  
 loss = 1 - AUC  
@@ -108,7 +108,7 @@ loss = 1 - AUC
 
 先前的性能度量大多隐式的假设均等代价，计算的是错误**次数**而非**总体代价**  
 
-![cost_curve](images/cost_curve.jpg)
+![cost_curve](http://q5f6gj3dx.bkt.clouddn.com/cost_curve.jpg)
 
 ### 2.4 比较检验
 
