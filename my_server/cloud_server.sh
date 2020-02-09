@@ -75,6 +75,7 @@ vim ~/.jupyter/jupyter_notebook_config.py
 pip install tensorflow
 pip install keras
 pip install matplotlib
+pip install pillow
 
 
 ################################################################
