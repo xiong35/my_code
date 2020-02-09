@@ -125,7 +125,7 @@ loss = 1 - AUC
 1. 标准太严，拒绝了本来为真的假设，记为$\alpha$，称之为显著水平(离谱水平)
 2. 标准太松，接受了本来为假的假设。在一定的$\alpha$下我们希望受伪的概率越小越好。记受伪概率为$\pi=1-P(接受H_0|H_0为假)$，称之为检验的势。即在不冤枉好人的前提下最能发现坏人
 
-![hypothesis_test](images/hypogthesis_test.png)
+![hypothesis_test](http://q5f6gj3dx.bkt.clouddn.com/hypogthesis_test.png)
 
 > 记training error为$\hat{e}$，实际（泛化）错误率为$e$
 
@@ -329,7 +329,7 @@ $$
 l(\beta)=\displaystyle\sum_{i=1}^m(-y_i\beta^T\hat{x}_i+ln(1+e^{\beta^T\hat{x}}))
 $$
 证明如下：  
-![maximum likelihood](images/maximum_likelihood.jpg)  
+![maximum likelihood](http://q5f6gj3dx.bkt.clouddn.com/maximum_likelihood.jpg)  
 $l(\beta)$是一个关于$\beta$的高阶可导连续凸函数，根据凸优化理论，可用牛顿法或者梯度下降迭代求解  
 
 ### 3.4 线性判别分析
@@ -386,7 +386,7 @@ $$
 实践中通常对$S_w$进行奇异值分解  
   
 LDA可以从贝叶斯决策理论的角度阐释，并可证明，当两类数据同先验、满足高斯分布且协方差相同时，LDA可达最优分类：  
-![LDA的贝叶斯证明](images/Bayes.jpg)  
+![LDA的贝叶斯证明](http://q5f6gj3dx.bkt.clouddn.com/Bayes.jpg)  
 可以推广到多分类问题，具体见西瓜书3.4末尾？?  
 
 ### 3.5 多分类问题
@@ -398,7 +398,7 @@ LDA可以从贝叶斯决策理论的角度阐释，并可证明，当两类数�
 - MvM（many vs many）
 
 OvO, OvR：不赘述，如图  
-![OvO,OvR](images/OvO_OvR.jpg)  
+![OvO,OvR](http://q5f6gj3dx.bkt.clouddn.com/OvO_OvR.jpg)  
 
 MvM：每次将若干类作为正类，若干其他类作为反类，正反类要有特殊的构造，不能随意选取，一种最常用的技术叫“纠错输出码技术”（Error Correction Output Codes，ECOC）  
   

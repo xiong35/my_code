@@ -515,7 +515,7 @@ tar仅是打包，没有压缩
 
 #### 9.3.6 vim常用总结
 
-![vim](images/vim.jpg)
+![vim](http://q5f6gj3dx.bkt.clouddn.com/vim.jpg)
 
 ---
 

@@ -54,7 +54,7 @@
 ## 信息的度量
 
 - 信息熵
-![信息熵](images/XinXiShang.jpg)
+![信息熵](http://q5f6gj3dx.bkt.clouddn.com/XinXiShang.jpg)
   - 定义：$H(X)=-\displaystyle\sum_{x\in X}P(x)logP(x)$
   - 冗余度：文件大小（BIT）与文件所含信息熵的差值（汉语冗余度较小）
   - 香农第一定律：**任何编码的长度不小于他的信息熵**
