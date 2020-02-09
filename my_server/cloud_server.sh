@@ -87,4 +87,8 @@ ssh-keygen -t rsa -C "2242787668@qq.com"
 vim ~/.ssh/id_rsa.pub
 # add it to the github
 
+git config user.email "2242787668@qq.com"
+git config user.name "xiong35"
+
+
 git clone git@github.com:xiong35/my_code2242787668.git
