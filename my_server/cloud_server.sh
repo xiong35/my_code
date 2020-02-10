@@ -50,6 +50,7 @@ pip install jupyter
 
 # PATH="${PATH}:/usr/local/python/bin"
 
+
 jupyter notebook --generate-config --allow-root
 
 python
@@ -65,8 +66,10 @@ vim ~/.jupyter/jupyter_notebook_config.py
 # c.NotebookApp.port =7777
 # c.NotebookApp.allow_remote_access = True
 
+
+
 # remember to turn the 7777 port on!!
-# jupyter notebook --allow-root
+jupyter notebook --allow-root
 
 ################################################################
 
