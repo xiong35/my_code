@@ -58,7 +58,7 @@ def generate_pattern(layer_name, filter_index, size=150):
 # plt.imshow(generate_pattern('conv2d_1', 0))
 # plt.show()
 
-layer_name = 'conv2d_4'
+layer_name = 'conv2d_1'
 size = 64
 margin = 5
 num = 5  # 5*5 filters
