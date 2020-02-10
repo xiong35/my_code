@@ -813,4 +813,29 @@ test -xxx
 
 ## 21 软件安装
 
+### 21.1 make
+
+make会按照makefile这个文件的指示自动完成编译链接的任务  
+
+makefile基本语法:  
+  
+<命令名1>: file1.o file2.o file3.o ...  
+\<tab\> gcc -o targetfile file1.o file2.o file3.o  
+<命令名2(以clean为例)>:
+\<tab\> rm -f main main.o file1.o file2.o file3.o  
+
+简化版：  
+
+OBJS = main.o file1.o file2.o file3.o  
+main: ${OBJS}  
+\<tab\> gcc -o main ${ONJS}  
+clean:  
+\<tab\> rm -f ${OBJS}  
+
+一般流程：  
+
+    ./comfig --prefix=/your_dic# 检查依赖，建立makefile文件
+    make clean # 确保去掉了奇怪的东西
+    make
+    make install
 
