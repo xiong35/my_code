@@ -5,13 +5,14 @@ from keras import backend as K
 from keras.models import load_model
 import matplotlib.pyplot as plt
 
-model = load_model('cats_and_dogs_small_2.h5')
+# model = load_model('cats_and_dogs_small_2.h5')
+model = VGG16(weights='imagenet', include_top=False)
 
 filter_index = 0
 
 
 # in case of getting a number out of range: (0,255)
-# we need to preprocessing the image
+# we need to preprocess the image
 
 def deprocess_image(x):
     # s.t. mean = 0, stdErr = 0.1
@@ -58,27 +59,30 @@ def generate_pattern(layer_name, filter_index, size=150):
 # plt.imshow(generate_pattern('conv2d_1', 0))
 # plt.show()
 
-layer_name = 'conv2d_1'
+
 size = 64
 margin = 5
-num = 5  # 5*5 filters
+num = 8  # 5*5 filters
 fig_size = num * size + (num-1)*margin
 
-results = np.zeros((fig_size, fig_size, 3))
+# layer_name = 'conv2d_1'
 
-for i in range(num):
-    for j in range(num):
-        filter_img = generate_pattern(layer_name, i+j*num, size=size)
 
-        horizontal_start = i*size + i*margin
-        horizontal_end = horizontal_start + size
-        vertical_start = j*size + j*margin
-        vertical_end = vertical_start + size
-        results[horizontal_start:horizontal_end,
-                vertical_start:vertical_end, :] = filter_img
+def save_pattern(layer_name):
+    results = np.zeros((fig_size, fig_size, 3))
+    for i in range(num):
+        for j in range(num):
+            filter_img = generate_pattern(layer_name, i+j*num, size=size)
 
-plt.figure(figsize=(20, 20))
-results = np.clip(results, 0, 255).astype('uint8')
-plt.imshow(results)
-plt.savefig('/home/ylxiong/Documents/'+layer_name+'_pattern')
-plt.show()
+            horizontal_start = i*size + i*margin
+            horizontal_end = horizontal_start + size
+            vertical_start = j*size + j*margin
+            vertical_end = vertical_start + size
+            results[horizontal_start:horizontal_end,
+                    vertical_start:vertical_end, :] = filter_img
+
+    plt.figure(figsize=(20, 20))
+    results = np.clip(results, 0, 255).astype('uint8')
+    plt.imshow(results)
+    plt.savefig('/root/workingplace/my_code2242787668/'+layer_name+'_pattern')
+    # plt.show()
