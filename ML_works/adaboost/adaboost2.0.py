@@ -27,6 +27,8 @@ def loadDataSet(filename, begin=0, end=200):
             for i in range(numFeat - 1):
                 lineArr.append(float(curLine[i]))
             dataMatrix.append(lineArr)
+            # change the label into 1/-1
+            # so the following calculation will be easier
             if curLine[-1] == 'g':
                 labelMatrix.append(1.0)
             else:
