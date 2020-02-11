@@ -59,7 +59,7 @@ def stocGradAscent(dataMatrix, labelMatrix, numIter=150):
 
 
 weights = stocGradAscent(dataMatrix, labelMatrix)
-# [weights] is a list istead of a matrix
+# [weights] is a list instead of a matrix
 print(weights)
 
 
