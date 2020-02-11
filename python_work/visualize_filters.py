@@ -86,3 +86,8 @@ def save_pattern(layer_name):
     plt.imshow(results)
     plt.savefig('/root/workingplace/my_code2242787668/'+layer_name+'_pattern')
     # plt.show()
+
+for i in range(1,6):
+    layer_name = 'block'+str(i)+'_conv1'
+    save_pattern(layer_name)
+    print(layer_name,' has been saved!')

@@ -7,8 +7,9 @@ from keras.applications import VGG16
 
 conv_base = VGG16(weights='imagenet', include_top=False,
                   input_shape=(150, 150, 3))
+# conv_base.summary()
 
-base_dir = '/home/ylxiong/Documents/base_dir'
+base_dir = '/root/workingplace/small_dir'
 train_dir = os.path.join(base_dir, 'train')
 val_dir = os.path.join(base_dir, 'val')
 test_dir = os.path.join(base_dir, 'test')
@@ -22,6 +23,7 @@ def extract_features(directory, sample_count):
     labels = np.zeros(shape=(sample_count))
     generator = dataGen.flow_from_directory(
         directory,
+	target_size=(150,150),
         batch_size=batch_size,
         class_mode='binary'
     )
