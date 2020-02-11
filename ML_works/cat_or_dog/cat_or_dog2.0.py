@@ -1,3 +1,6 @@
+
+# 2.0 means using data enhanse
+
 from keras.preprocessing import image
 import matplotlib.pyplot as plt
 from keras.preprocessing.image import ImageDataGenerator
