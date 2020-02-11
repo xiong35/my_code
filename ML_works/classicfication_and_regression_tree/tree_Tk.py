@@ -37,7 +37,7 @@ def getInputs():
         tolS = 1.0
         print("enter Float for tolS")
         tolSentry.delete(0,END)
-        tolSentry.insert(0,'1,0')
+        tolSentry.insert(0,'1.0')
     return tolN, tolS
 
 
@@ -48,7 +48,6 @@ def drawNewTree():
 
 root = Tk()
 
-# Label(root, text='Plot Place Holder').grid(row=0, columnspan=3)
 reDraw.f = Figure(figsize=(5, 4), dpi=100)
 reDraw.canvas = FigureCanvasTkAgg(reDraw.f, master=root)
 reDraw.canvas.draw()
