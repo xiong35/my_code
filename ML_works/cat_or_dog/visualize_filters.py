@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 # model = load_model('cats_and_dogs_small_2.h5')
 model = VGG16(weights='imagenet', include_top=False)
 
-filter_index = 0
-
 
 # in case of getting a number out of range: (0,255)
 # we need to preprocess the image
