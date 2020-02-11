@@ -136,7 +136,7 @@ history = model.fit_generator(
     validation_data=validation_generator,
     validation_steps=50)
 
-model.save('cats_and_dogs_small_2.h5')
+# model.save('cats_and_dogs_small_2.h5')
 
 
 acc = history.history['acc']
@@ -158,4 +158,6 @@ plt.plot(epochs, val_loss, 'b', label='Validation loss')
 plt.title('Training and validation loss')
 plt.legend()
 
-plt.show()
+plt.savefig('/root/my_code2242787668/ML_works/cat_or_dog/images/cat_dog_plt')
+
+# plt.show()
