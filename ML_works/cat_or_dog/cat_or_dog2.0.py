@@ -9,9 +9,9 @@ from keras import models, layers
 import os
 import shutil
 
-original_dataset_dir = '/home/ylxiong/Documents/kaggle1902/train'
+original_dataset_dir = '/root/MySource/train'
 
-base_dir = '/home/ylxiong/Documents/base_dir'
+base_dir = '/root/MySource/base_dir'
 os.mkdir(base_dir)
 
 train_dir = os.path.join(base_dir, 'train')
