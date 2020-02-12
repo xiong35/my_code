@@ -151,6 +151,8 @@ plt.plot(epochs, val_acc, 'b', label='Validation acc')
 plt.title('Training and validation accuracy')
 plt.legend
 
+plt.savefig('/root/my_code2242787668/ML_works/cat_or_dog/images/cat_dog_acc_adam')
+
 plt.figure()
 
 plt.plot(epochs, loss, 'bo', label='Training loss')
@@ -158,6 +160,6 @@ plt.plot(epochs, val_loss, 'b', label='Validation loss')
 plt.title('Training and validation loss')
 plt.legend()
 
-plt.savefig('/root/my_code2242787668/ML_works/cat_or_dog/images/cat_dog_plt')
+plt.savefig('/root/my_code2242787668/ML_works/cat_or_dog/images/cat_dog_loss_adam')
 
 # plt.show()

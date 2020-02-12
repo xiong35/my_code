@@ -196,4 +196,4 @@
 
 结果如图：
 
-![cat_or_dog_model]()
+![cat_or_dog_model](http://q5ioolwed.bkt.clouddn.com/cat_dog_plt.png)
