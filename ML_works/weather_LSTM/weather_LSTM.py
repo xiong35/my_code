@@ -114,8 +114,8 @@ model.add(layers.GRU(32, dropout=0.2, recurrent_dropout=0.2,
 model.add(layers.Dense(1))
 
 model.compile(optimizer=RMSprop(), loss='mse')
-history = model.fit_generator(train_gen, steps_per_epoch=50,# 500
-                              epochs=1, validation_data=val_gen, # epochs=40
+history = model.fit_generator(train_gen, steps_per_epoch=5,# 500
+                              epochs=3, validation_data=val_gen, # epochs=40
                               validation_steps=val_steps)
 
 loss = history.history['loss']
@@ -129,4 +129,4 @@ plt.plot(epochs, loss, 'bo', label='Training loss')
 plt.plot(epochs, val_loss, 'b', label='Validation loss')
 plt.title('Training and validation loss')
 plt.legend()
-plt.savefig('./images/GRU_mpl')
+plt.savefig('./images/GRU_mpl2')
