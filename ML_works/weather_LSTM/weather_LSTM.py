@@ -63,7 +63,7 @@ def generator(
         else:
             if i + batch_size >= max_index:
                 i = min_index + lookback
-            rows = np.arange(i, mim(i+batch_size, max_index))
+            rows = np.arange(i, min(i+batch_size, max_index))
             i += len(rows)
 
         samples = np.zeros((len(rows),          # num of [input for the next procces]
@@ -114,8 +114,8 @@ model.add(layers.GRU(32, dropout=0.2, recurrent_dropout=0.2,
 model.add(layers.Dense(1))
 
 model.compile(optimizer=RMSprop(), loss='mse')
-history = model.fit_generator(train_gen, steps_per_epoch=500,
-                              epochs=20, validation_data=val_gen,
+history = model.fit_generator(train_gen, steps_per_epoch=50,# 500
+                              epochs=1, validation_data=val_gen, # epochs=40
                               validation_steps=val_steps)
 
 loss = history.history['loss']
