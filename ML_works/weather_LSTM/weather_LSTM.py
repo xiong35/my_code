@@ -4,7 +4,7 @@ from keras import layers
 from keras.models import Sequential
 import numpy as np
 import os
-import matplot.pyplot as plt
+import matplotlib.pyplot as plt
 
 data_dir = '/root/MySource/jena'  # TODO
 
@@ -108,7 +108,7 @@ test_gen = (len(float_data)-300001 - lookback)//batch_size
 ##### train a GRU with dropout #####
 
 model = Sequential()
-model.add(layers.GRU(32, dropout=0.2, recurrent_dropout=0.2
+model.add(layers.GRU(32, dropout=0.2, recurrent_dropout=0.2,
                      input_shape=(None, float_data.shape[-1])))
 
 model.add(layers.Dense(1))
