@@ -1,4 +1,7 @@
 
+from keras.optimizers import RMSprop
+from keras import layers
+from keras.models import Sequential
 import numpy as np
 import os
 import matplot.pyplot as plt
@@ -75,3 +78,32 @@ def generator(
             samples[j] = data[indices]
             targets[j] = data[rows[j]+delay][1]
         yield samples, targets
+
+
+lookback = 1440
+step = 6
+delay = 144
+batch_size = 128
+
+train_gen = generator(float_data, lookback=lookback,
+                      delay=delay, min_index=0,
+                      max_index=200000, shuffle=True,
+                      step=step, batch_size=batch_size)
+
+val_gen = generator(float_data, lookback=lookback,
+                    delay=delay, min_index=200001,
+                    max_index=300000, step=step,
+                    batch_size=batch_size)
+
+test_gen = generator(float_data, lookback=lookback,
+                     delay=delay, min_index=300001,
+                     max_index=None, step=step,
+                     batch_size=batch_size)
+
+# to see the whole dataset, how many times to sample from val_gen
+val_steps = (300000 - 200001 - lookback)//batch_size
+test_gen = (len(float_data)-300001 - lookback)//batch_size
+
+
+##### train a GRU with dropout #####
+
