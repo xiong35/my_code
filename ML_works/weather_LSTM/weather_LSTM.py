@@ -115,7 +115,7 @@ model.add(layers.Dense(1))
 
 model.compile(optimizer=RMSprop(), loss='mse')
 history = model.fit_generator(train_gen, steps_per_epoch=500,
-                              epochs=40, validation_data=val_gen,
+                              epochs=20, validation_data=val_gen,
                               validation_steps=val_steps)
 
 loss = history.history['loss']
