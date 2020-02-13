@@ -104,7 +104,7 @@ test_gen = generator(float_data, lookback=lookback,
 
 # to see the whole dataset, how many times to sample from val_gen
 val_steps = (300000 - 200001 - lookback)//batch_size
-test_gen = (len(float_data)-300001 - lookback)//batch_size
+test_steps = (len(float_data)-300001 - lookback)//batch_size
 
 
 ##### train a GRU with dropout #####
@@ -115,7 +115,7 @@ model.add(layers.GRU(32, dropout=0.2, recurrent_dropout=0.2,
 
 model.add(layers.Dense(1))
 
-model.compile(optimizer=optimizers.adam(lr=0.0001), loss='mae')
+model.compile(optimizer=optimizers.RMSprop(), loss='mae')
 history = model.fit_generator(train_gen, steps_per_epoch=500,# 500
                               epochs=30, validation_data=val_gen,
                               validation_steps=val_steps)
@@ -133,4 +133,4 @@ plt.plot(epochs, loss, 'bo', label='Training loss')
 plt.plot(epochs, val_loss, 'b', label='Validation loss')
 plt.title('Training and validation loss')
 plt.legend()
-plt.savefig('./images/GRU_mpl3')
+plt.savefig('./images/GRU_mpl')
