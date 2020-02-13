@@ -122,8 +122,8 @@ test_steps = (len(float_data) - 300001 - lookback) // batch_size
 
 model = Sequential()
 model.add(layers.GRU(32,
-                     dropout=0.2,
-                     recurrent_dropout=0.2,
+                     dropout=0.3,
+                     # recurrent_dropout=0.2,
                      input_shape=(None, float_data.shape[-1])))
 model.add(layers.Dense(1))
 model.compile(optimizer=RMSprop(), loss='mae')
@@ -142,4 +142,4 @@ plt.plot(epochs, loss, 'bo', label='Training loss')
 plt.plot(epochs, val_loss, 'b', label='Validation loss')
 plt.title('Training and validation loss')
 plt.legend()
-plt.savefig('./images/GRU_mpl4')
+plt.savefig('./images/GRU_mpl')
