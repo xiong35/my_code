@@ -77,6 +77,8 @@ def generator(
             # mat[(range)] means to choose the rows in the range
             samples[j] = data[indices]
             targets[j] = data[rows[j]+delay][1]
+        print(samples.shape)
+        print(targets)
         yield samples, targets
 
 
