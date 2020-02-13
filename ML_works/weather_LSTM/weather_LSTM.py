@@ -1,12 +1,12 @@
 
-from keras.optimizers import RMSprop
+from keras import optimizers
 from keras import layers
 from keras.models import Sequential
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-data_dir = '/root/MySource/jena'  # TODO
+data_dir = '/root/MySource/jena'
 
 fname = os.path.join(data_dir, 'climate.csv')
 
@@ -26,10 +26,11 @@ for i, line in enumerate(lines):
     values = [float(x) for x in line.split(',')[1:]]
     float_data[i, :] = values
 
+
 # the new first column is temp(erature)
 temp = float_data[:, 1]
 plt.plot(range(1440), temp[:1440])
-plt.show()
+
 
 # standardize the data
 # take the first 200000 time steps as training data
@@ -77,8 +78,6 @@ def generator(
             # mat[(range)] means to choose the rows in the range
             samples[j] = data[indices]
             targets[j] = data[rows[j]+delay][1]
-        print(samples.shape)
-        print(targets)
         yield samples, targets
 
 
@@ -116,9 +115,9 @@ model.add(layers.GRU(32, dropout=0.2, recurrent_dropout=0.2,
 
 model.add(layers.Dense(1))
 
-model.compile(optimizer=RMSprop(), loss='mae')
+model.compile(optimizer=optimizers.adam(lr=0.0001), loss='mae')
 history = model.fit_generator(train_gen, steps_per_epoch=500,# 500
-                              epochs=3, validation_data=val_gen, # epochs=40
+                              epochs=30, validation_data=val_gen,
                               validation_steps=val_steps)
 
 loss = history.history['loss']
