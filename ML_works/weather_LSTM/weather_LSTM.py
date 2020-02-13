@@ -134,10 +134,11 @@ model.compile(optimizer=RMSprop(), loss='mae')
 
 history = model.fit_generator(train_gen,
                               steps_per_epoch=500,
-                              epochs=50,
+                              epochs=16,
                               validation_data=val_gen,
                               validation_steps=val_steps)
 
+model.save('/root/MySource/GRU.h5')
 
 loss = history.history['loss']
 val_loss = history.history['val_loss']
