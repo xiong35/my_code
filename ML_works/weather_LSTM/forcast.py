@@ -52,20 +52,10 @@ def generator(data, lookback, delay, min_index, max_index,
             rows = np.arange(i, min(i + batch_size, max_index))
             i += len(rows)
 
-            num of[output for the next procces]
-        samples = np.zeros((len(rows),
-                            lookback // step,
-                            data.shape[-1]))
-        targets = np.zeros((len(rows),))
-        for j, row in enumerate(rows):
-            indices = range(rows[j] - lookback, rows[j], step)
-            samples[j] = data[indices]
-            targets[j] = data[rows[j] + delay][1]
-        # samples = np.zeros((len(rows),          # num of [input for the next procces]
-        yield samples, targets
-        #                     lookback // step,   # num of previous data
-        #                     data.shape[-1]))    # num of features
-        # num of [output for the next procces]
+            # samples = np.zeros((len(rows),          # num of [input for the next procces]
+            #                     lookback // step,   # num of previous data
+            #                     data.shape[-1]))    # num of features
+            # num of [output for the next procces]
         samples = np.zeros((len(rows),
                             lookback // step,
                             data.shape[-1]))
