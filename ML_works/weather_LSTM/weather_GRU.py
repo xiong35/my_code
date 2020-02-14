@@ -3,7 +3,7 @@ from keras.models import Sequential
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from keras.optimizers import Adam
+from keras.optimizers import RMSprop
 
 data_dir = '/root/MySource/jena'
 
@@ -26,12 +26,31 @@ for i, line in enumerate(lines):
     float_data[i, :] = values
 
 
+# the new first column is temp(erature)
+temp = float_data[:, 1]
+
+
 # standardize the data
 # take the first 200000 time steps as training data
 mean = float_data[:200000].mean(axis=0)
 float_data -= mean
 std = float_data[:200000].std(axis=0)
 float_data /= std
+
+# def a generator that returns a tuple (samples, targets)
+# samples for a batch of input
+# targets for a list of temperatures
+# def generator(
+#     data,           # standardized data
+#     lookback,       # how many previous time steps should consider
+#                     # in the next procces
+#     delay,          # how many time steps between now and target
+#     min_index,      # define to choose which steps
+#     max_index,
+#     shuffle=False,  # whether to shuffle the data
+#     batch_size=128,
+#     step=6          # the interval step between two samples
+# ):
 
 
 def generator(data, lookback, delay, min_index, max_index,
@@ -102,17 +121,16 @@ test_steps = (len(float_data) - 300001 - lookback) // batch_size
 ##### train a GRU with dropout #####
 
 model = Sequential()
-model.add(layers.LSTM(32,
-                      dropout=0.25,
-                      # recurrent_dropout=0.2,
-                      return_sequences=False,
-                      input_shape=(None, float_data.shape[-1],
-                                   )))
-# model.add(layers.GRU(64, activation='relu', dropout=0.25))
-# model.add(layers.Dense(64))
+model.add(layers.GRU(32,
+                     dropout=0.25,
+                     # recurrent_dropout=0.2,
+                     return_sequences=True,
+                     input_shape=(None, float_data.shape[-1])))
+model.add(layers.GRU(64, activation='relu', dropout=0.25))
+model.add(layers.Dense(64))
 model.add(layers.Dense(1))
 
-model.compile(optimizer=Adam(), loss='mse')
+model.compile(optimizer=RMSprop(), loss='mae')
 
 history = model.fit_generator(train_gen,
                               steps_per_epoch=500,
@@ -120,7 +138,7 @@ history = model.fit_generator(train_gen,
                               validation_data=val_gen,
                               validation_steps=val_steps)
 
-model.save('/root/MySource/LSTM.h5')
+model.save('/root/MySource/GRU.h5')
 
 loss = history.history['loss']
 val_loss = history.history['val_loss']
@@ -130,4 +148,4 @@ plt.plot(epochs, loss, 'bo', label='Training loss')
 plt.plot(epochs, val_loss, 'b', label='Validation loss')
 plt.title('Training and validation loss')
 plt.legend()
-plt.savefig('./images/LSTM_mpl')
+plt.savefig('./images/GRU_mpl3')

@@ -33,7 +33,7 @@ std = float_data[:200000].std(axis=0)
 float_data /= std
 print('data loaded')
 
-my_model = load_model('/root/MySource/GRU.h5')
+my_model = load_model('/root/MySource/LSTM.h5')
 print('model loaded')
 
 
@@ -97,4 +97,4 @@ plt.title('Real And Predict Curve')
 plt.xlabel("days")
 plt.ylabel("temp")
 plt.legend()
-plt.savefig('./images/GRU_predict')
+plt.savefig('./images/LSTM_predict')
