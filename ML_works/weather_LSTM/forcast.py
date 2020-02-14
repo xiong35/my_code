@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import load_model
-
+import os
 
 data_dir = '/root/MySource/jena'
 
@@ -92,7 +92,7 @@ print(len(predictions))
 days = range(1, len(predictions)+1)
 plt.figure()
 plt.plot(days, y_test, 'b', alpha=0.8, label='Real Date')
-plt.plot(days, val_loss, 'r', alpha=0.8, label='Predict Date')
+plt.plot(days, predictions, 'r', alpha=0.8, label='Predict Date')
 plt.title('Real And Predict Curve')
 plt.xlabel("days")
 plt.ylabel("temp")
