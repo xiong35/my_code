@@ -20,7 +20,7 @@ def build_model():
                            input_shape=(train_data.shape[1],)))
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(1))
-    model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+    model.compile(optimizer='rmsprop', loss='mae', metrics=['mae'])
     return model
 
 
@@ -59,10 +59,11 @@ average_mae_history = [
     np.mean([x[i] for x in all_mae_histories]) for i in range(num_epochs)
 ]
 
-""" plt.plot(range(1, len(average_mae_history)+1), average_mae_history)
+plt.figure()
+plt.plot(range(16, len(average_mae_history[15:])+16), average_mae_history[15:])
 plt.xlabel('Epochs')
 plt.ylabel('Val MAE')
-plt.show() """
+plt.show()
 
 
 def smooth_curve(points, factor=0.9):
@@ -78,8 +79,9 @@ def smooth_curve(points, factor=0.9):
 
 smooth_mae_history = smooth_curve(average_mae_history[10:])
 
-plt.plot(range(1,len(smooth_mae_history)+1),smooth_mae_history)
+plt.figure()
+plt.plot(range(1, len(smooth_mae_history)+1), smooth_mae_history)
 
 plt.xlabel('Epochs')
 plt.ylabel('Val MAE')
-plt.show() 
+plt.show()

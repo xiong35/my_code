@@ -108,13 +108,4 @@ plt.hist2d(x, y, bins=300)
 # scatter the centroid
 centroid, _ = kMeans(dataSet, k)
 
-# show the data
-# x = dataSet[:, 0].T.tolist()[0]
-# y = dataSet[:, 1].T.tolist()[0]
-# plt.hist2d(x, y, bins=300)
 
-# centX = centroid[:, 0].T.tolist()[0]
-# centY = centroid[:, 1].T.tolist()[0]
-# plt.scatter(centX, centY)
-
-# plt.show()
