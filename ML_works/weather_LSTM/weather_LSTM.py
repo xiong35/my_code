@@ -121,7 +121,7 @@ history = model.fit_generator(train_gen,
 
 # model.save('/root/MySource/LSTM2.h5')
 
-lss = history.history['loss']
+loss = history.history['loss']
 val_loss = history.history['val_loss']
 epochs = range(1, len(loss) + 1)
 plt.figure()
