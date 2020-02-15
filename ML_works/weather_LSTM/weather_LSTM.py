@@ -3,7 +3,7 @@ from keras.models import Sequential
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from keras.optimizers import Adam
+from keras.optimizers import RMSprop
 
 data_dir = '/root/MySource/jena'
 
@@ -99,20 +99,20 @@ val_steps = (300000 - 200001 - lookback) // batch_size
 test_steps = (len(float_data) - 300001 - lookback) // batch_size
 
 
-##### train a GRU with dropout #####
+##### train a LSTM with dropout #####
 
 model = Sequential()
 model.add(layers.LSTM(32,
-                      dropout=0.25,
-                      # recurrent_dropout=0.5,
+                      dropout=0.1,
+                      recurrent_dropout=0.5,
                       return_sequences=True,
-                      input_shape=(None, float_data.shape[-1],
-                                   )))
-model.add(layers.LSTM(64, activation='relu', 
-                      dropout=0.25))
+                      input_shape=(None, float_data.shape[-1])))
+model.add(layers.LSTM(64, activation='relu',
+                      dropout=0.1,
+                      recurrent_dropout=0.5))
 model.add(layers.Dense(1))
 
-model.compile(optimizer=Adam(), loss='mae')
+model.compile(optimizer=RMSprop(), loss='mae')
 
 history = model.fit_generator(train_gen,
                               steps_per_epoch=500,
@@ -120,7 +120,7 @@ history = model.fit_generator(train_gen,
                               validation_data=val_gen,
                               validation_steps=val_steps)
 
-model.save('/root/MySource/LSTM.h5')
+# model.save('/root/MySource/LSTM2.h5')
 
 lss = history.history['loss']
 val_loss = history.history['val_loss']
