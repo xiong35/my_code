@@ -103,16 +103,16 @@ test_steps = (len(float_data) - 300001 - lookback) // batch_size
 
 model = Sequential()
 model.add(layers.LSTM(32,
-                      dropout=0.25,
-                      recurrent_dropout=0.25,
+                      dropout=0.1,
+                      recurrent_dropout=0.5,
                       return_sequences=True,
                       input_shape=(None, float_data.shape[-1],
                                    )))
 model.add(layers.LSTM(64, activation='relu', 
-                      dropout=0.25,recurrent_dropout=0.25))
+                      dropout=0.1,recurrent_dropout=0.5))
 model.add(layers.Dense(1))
 
-model.compile(optimizer=Adam(), loss='mse')
+model.compile(optimizer=Adam(), loss='mae')
 
 history = model.fit_generator(train_gen,
                               steps_per_epoch=500,
