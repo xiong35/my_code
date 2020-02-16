@@ -77,3 +77,9 @@
   - pl: pull
 
 git的配置文件在.git/config里
+
+## 参考资料
+
+[廖雪峰git教程](https://www.liaoxuefeng.com/wiki/896043488029600)  
+
+[Git Cheat Sheet](https://gitee.com/liaoxuefeng/learn-java/raw/master/teach/git-cheatsheet.pdf)
