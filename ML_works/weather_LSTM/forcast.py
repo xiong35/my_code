@@ -33,7 +33,8 @@ std = float_data[:200000].std(axis=0)
 float_data /= std
 print('data loaded')
 
-my_model = load_model('/root/MySource/LSTM0.h5')
+LSTM_model = load_model('/root/MySource/LSTM0.h5')
+GRU_model = load_model('/root/MySource/GRU.h5')
 print('model loaded')
 
 
@@ -82,19 +83,28 @@ test_gen = generator(float_data,
 
 test_steps = (len(float_data) - 300001 - lookback) // batch_size
 
-x_test, y_test = next(test_gen)
+x_test = []
+y_test = []
+
+for i in range(5):
+    x_temp, y_temp = next(test_gen)
+    x_test.extend(x_temp)
+    y_test.extend(y_temp)
+
 print(len(y_test))
 
-predictions = my_model.predict(x_test)
+LSTM_pre = LSTM_model.predict(x_test)
+GRU_pre = GRU_model.predict(x_test)
 
-print(len(predictions))
+print(len(LSTM_pre))
 
-days = range(1, len(predictions)+1)
+days = range(1, len(LSTM_pre)+1)
 plt.figure()
-plt.plot(days, y_test, 'b', alpha=0.8, label='Real Date')
-plt.plot(days, predictions, 'r', alpha=0.8, label='Predict Date')
+plt.plot(days, y_test, 'purple', alpha=0.9, label='Real Date')
+plt.plot(days, LSTM_pre, 'r', alpha=0.7, label='LSTM Predict')
+plt.plot(days,GRU_pre, 'b', alpha=0.7, label='GRU Predict')
 plt.title('Real And Predict Curve')
 plt.xlabel("days")
 plt.ylabel("temp")
 plt.legend()
-plt.savefig('./images/LSTM_predict')
+plt.savefig('./images/L_N_G_predict')
