@@ -26,4 +26,14 @@
 - checkout -- \<file\>：让file回到最近一次add/commit的状态(撤销)
 - reset HEAD \<file\>：取消file的暂存
 - rm：从版本库里删除
-- 
+
+## 分支管理
+
+### 基本命令
+
+- switch -c xxx：创建并切换分支（-c：creat）
+- branch [-d xxx]：查看分支（-d：del，删除分支）
+- merge [-d] xxx：将xxx合并到当前分支
+
+### 解决冲突
+
