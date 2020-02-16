@@ -33,7 +33,7 @@ std = float_data[:200000].std(axis=0)
 float_data /= std
 print('data loaded')
 
-my_model = load_model('/root/MySource/LSTM.h5')
+my_model = load_model('/root/MySource/LSTM0.h5')
 print('model loaded')
 
 
