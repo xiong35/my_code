@@ -29,7 +29,7 @@
 
 ## 分支管理
 
-### 基本命令 ￥bug￥
+### 基本命令
 
 - switch -c xxx：创建并切换分支（-c：creat）
 - branch [-d xxx]：查看分支（-d：del，删除分支）
