@@ -17,7 +17,7 @@
 - commit：提交更改
 - status：查看工作区状态
 - diff：查看更改内容
-- log：查看提交记录
+- log：查看提交记录[--graph --pretty==onrline]
 - reset --hard \<id\>
   - HEAD：当前版本
   - HEAD^^：前两个版本
@@ -35,10 +35,6 @@
 - branch [-d xxx]：查看分支（-d：del，删除分支）
 - merge [-d] xxx：将xxx合并到当前分支
 
-
-dddlll
-
 ### 解决冲突
 
-feature
----
+合并发生冲突时会在文件里添加<<<<, ====, >>>>，将对应行删除，编辑冲突部分，再提交即可合并冲突
