@@ -31,9 +31,11 @@
 
 ### 基本命令
 
-- switch -c xxx：创建并切换分支（-c：creat）
+- switch -c xxx：创建并切换分支（-c：creat）/最新版可用
+- checkout -b：创建并切换分支
 - branch [-d xxx]：查看分支（-d：del，删除分支）
 - merge [-d] xxx：将xxx合并到当前分支
 
 ### 解决冲突
 
+feature
