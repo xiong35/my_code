@@ -87,7 +87,10 @@ LSTM_pre = []
 GRU_pre = []
 y_real = []
 
-for i in range(10):
+for i in range(5):
+    next(test_gen)
+
+for i in range(8):
     x_temp, y_temp = next(test_gen)
     LSTM_temp = LSTM_model.predict(x_temp)
     LSTM_pre.extend(LSTM_temp.tolist())
@@ -98,9 +101,9 @@ for i in range(10):
 
 days = range(1, len(y_real)+1)
 plt.figure()
-plt.plot(days, y_real, 'purple', alpha=0.9, label='Real Date')
-plt.plot(days, LSTM_pre, 'r', alpha=0.7, label='LSTM Predict')
-plt.plot(days, GRU_pre,'b',alpha=0.7, label='GRU Predict')
+plt.plot(days, y_real, 'black', alpha=1, label='Real Date')
+plt.plot(days, LSTM_pre, 'r', alpha=0.6, label='LSTM Predict')
+plt.plot(days, GRU_pre,'b',alpha=0.5, label='GRU Predict')
 plt.title('Real And Predict Curve')
 plt.xlabel("days")
 plt.ylabel("temp")
