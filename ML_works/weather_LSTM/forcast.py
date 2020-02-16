@@ -83,18 +83,26 @@ test_gen = generator(float_data,
 
 test_steps = (len(float_data) - 300001 - lookback) // batch_size
 
+LSTM_pre = []
+GRU_pre = []
+y_real = []
 
-LSTM_real, LSTM_pre = LSTM_model.predict_generator(test_gen, epochs=5)
+for i in range(10):
+    x_temp, y_temp = next(test_gen)
+    LSTM_temp = LSTM_model.predict(x_temp)
+    LSTM_pre.extend(LSTM_temp.tolist())
+    GRU_temp = GRU_model.predict(x_temp)
+    GRU_pre.extend(GRU_temp.tolist())
+    y_real.extend(y_temp.tolist())
 
-print(len(LSTM_real))
-print(len(LSTM_pre))
 
-days = range(1, len(LSTM_pre)+1)
+days = range(1, len(y_real)+1)
 plt.figure()
-plt.plot(days, LSTM_real, 'b', alpha=0.7, label='Real Date')
+plt.plot(days, y_real, 'purple', alpha=0.9, label='Real Date')
 plt.plot(days, LSTM_pre, 'r', alpha=0.7, label='LSTM Predict')
+plt.plot(days, GRU_pre,'b',alpha=0.7, label='GRU Predict')
 plt.title('Real And Predict Curve')
 plt.xlabel("days")
 plt.ylabel("temp")
 plt.legend()
-plt.savefig('./images/LSTM2_predict')
+plt.savefig('./images/L_G_predict')
