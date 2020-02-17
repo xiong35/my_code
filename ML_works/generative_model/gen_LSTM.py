@@ -18,7 +18,7 @@ print('Corpus len: ', len(text))
 # (sequence, maxlen, unique_char)
 # and prepare a vec y, containing targets
 
-maxlen = 60     # text len per sample
+maxlen = 80     # text len per sample
 step = 3        # step between samples
 sentences = []
 next_chars = []
@@ -68,29 +68,31 @@ def sample(preds, temperature=1.0):
 
 random.seed(7)
 
-for epoch in range(1, 60):
-    print('epoch: ', epoch)
-    model.fit(x, y, batch_size=128, epochs=1)
+
+
+model.fit(x, y, batch_size=128, epochs=60)
+model.save('/root/MySource/gen_LSTM_60.h5')
+
+for sent in range(10):
     start_index = random.randint(0, len(text)-maxlen-1)
     generated_text = text[start_index:start_index+maxlen]
+    print()
     print('---generate with: "', generated_text, '"')
-    """ 
-    for temperature in [0.2, 0.5, 1.0, 1.2]:
+    print()
+    for temperature in [0.2, 0.5, 1.0]:
         print('------temperature: ', temperature)
         sys.stdout.write(generated_text)
-     """
-    temperature = 0.5    
 
-    for i in range(400):
-        sampled = np.zeros((1, maxlen, len(unique_chars)))
-        for t, char in enumerate(generated_text):
-            sampled[0, t, char_indices[char]] = 1
+        for i in range(500):
+            sampled = np.zeros((1, maxlen, len(unique_chars)))
+            for t, char in enumerate(generated_text):
+                sampled[0, t, char_indices[char]] = 1
 
-        preds = model.predict(sampled, verbose=0)[0]
-        next_index = sample(preds, temperature)
-        next_char = unique_chars[next_index]
+            preds = model.predict(sampled, verbose=0)[0]
+            next_index = sample(preds, temperature)
+            next_char = unique_chars[next_index]
 
-        generated_text += next_char
-        generated_text = generated_text[1:]
+            generated_text += next_char
+            generated_text = generated_text[1:]
 
-        sys.stdout.write(next_char)
+            sys.stdout.write(next_char)
