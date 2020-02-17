@@ -161,3 +161,57 @@ model.fit(x, y, epochs=10, batch_size=128
 
 ## 3 TensorBoard
 
+启动命令：
+
+```bash
+tensorboard --logdir=TFBoardLog
+```
+
+需要在模型里加入以下代码：
+
+```python
+callbacks = [keras.callbacks.TensorBoard(
+    log_dir='./TFBoardLog',
+    histogram_freq=1,   # after each epoch, engage the gram
+)]
+
+history = model.fit(x_train, y_train,
+                    epochs=20, batch_size=128,
+                    validation_split=0.2,
+                    callbacks=callbacks)
+```
+
+---
+
+## 4 高级操作
+
+### 4.1 批标准化
+
+在每一层输出数据之后都进行标准化，有利于梯度传播  
+一般在卷积/全连接层后面用  
+
+```python
+    model.add(layers.Dense(32,activation='relu'))
+    model.add(layers.BatchNormalization(axis=-1))
+```
+
+### 4.2 深度可分离网络
+
+对标卷积神经网络  
+将通道分别卷积，最后合并逐点卷积  
+
+### 4.3 超参数优化
+
+~~玄学调参~~  
+
+方法：
+
+- 贝叶斯优化
+- 遗传算法
+- 简单随机搜索
+
+注意**很容易过拟合**  
+
+### 4.4 模型集成
+
+用多个**尽可能好**且**尽可能不同**的模型一起预测，并将结果(加权)平均  

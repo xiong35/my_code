@@ -3,7 +3,7 @@ import keras
 from keras.datasets import imdb
 from keras.preprocessing import sequence
 
-max_features = 2000
+max_features = 1000
 max_len = 500
 
 (x_train, y_train), (x_test, y_test) = \
