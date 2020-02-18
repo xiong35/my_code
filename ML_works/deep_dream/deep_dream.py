@@ -64,7 +64,7 @@ iterations = 20
 # if loss is too large, stop training
 max_loss = 10.
 
-base_image_dir = './images/bbq.jpg'
+base_image_dir = './images/me.jpg'
 
 
 def preprocess_image(image_path):
@@ -130,4 +130,4 @@ for shape in succesive_shape:
     shrunk_original_img = resize_img(original_img, shape)
     # save_img(img, fname='./images/dream_at_scale_'+str(shape)+'.png')
 
-save_img(img, fname='./images/bbq_dream.png')
+save_img(img, fname='./images/me_dream.png')
