@@ -10,10 +10,10 @@ model = inception_v3.InceptionV3(weights='imagenet', include_top=False)
 K.set_learning_phase(0)
 
 layer_contributions = {
-    'mixed5': 0.2,
-    'mixed6': 2.,
-    'mixed7': 3.,
-    'mixed8': 1.5,
+    'mixed5': 2,
+    'mixed6': 3.,
+    'mixed7': 2.,
+    'mixed8': 0.2,
 }
 
 layer_dict = dict([(layer.name, layer) for layer in model.layers])
@@ -64,7 +64,7 @@ iterations = 20
 # if loss is too large, stop training
 max_loss = 10.
 
-base_image_dir = './images/pizza.jpg'
+base_image_dir = './images/bbq.jpg'
 
 
 def preprocess_image(image_path):
@@ -130,4 +130,4 @@ for shape in succesive_shape:
     shrunk_original_img = resize_img(original_img, shape)
     # save_img(img, fname='./images/dream_at_scale_'+str(shape)+'.png')
 
-save_img(img, fname='./images/pizza_dream.png')
+save_img(img, fname='./images/bbq_dream.png')
