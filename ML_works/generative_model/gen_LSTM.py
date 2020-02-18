@@ -59,15 +59,14 @@ model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 def sample(preds, temperature=1.0):
     preds = np.asarray(preds).astype('float64')
-    preds = np.log(preds)/temperature
+    preds = np.log(preds+1e-7)/（temperature+1e-7）
     exp_preds = np.exp(preds)
-    preds = exp_preds/np.sum(exp_preds)
+    preds = exp_preds/(np.sum(exp_preds)+1e-7)
     probas = np.random.multinomial(1, preds, 1)
     return np.argmax(probas)
 
 
 random.seed(7)
-
 
 
 model.fit(x, y, batch_size=128, epochs=60)
@@ -78,8 +77,8 @@ for sent in range(10):
     generated_text = text[start_index:start_index+maxlen]
     print()
     print('---generate with: "', generated_text, '"')
-    print()
     for temperature in [0.2, 0.5, 1.0]:
+        print()
         print('------temperature: ', temperature)
         sys.stdout.write(generated_text)
 
