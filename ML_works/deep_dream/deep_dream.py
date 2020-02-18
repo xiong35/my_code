@@ -66,6 +66,15 @@ max_loss = 10.
 
 base_image_dir = './images/origin.jpg'
 
+
+def preprocess_image(image_path):
+    img = image.load_img(image_path)
+    img = image.img_to_array(img)
+    img = np.expand_dims(img, axis=0)
+    img = inception_v3.preprocess_input(img)
+    return img
+
+
 img = preprocess_image(base_image_dir)
 
 # zoom the image while layers goes lower
@@ -90,14 +99,6 @@ def resize_img(img, size):
 def save_img(img, fname):
     pil_img = deprocess_image(np.copy(img))
     scipy.misc.imsave(fname, pil_img)
-
-
-def preprocess_image(image_path):
-    img = image.load_img(image_path)
-    img = image.img_to_array(img)
-    img = np.expand_dims(img, axis=0)
-    img = inception_v3.preprocess_input(img)
-    return img
 
 
 def deprocess_image(x):
