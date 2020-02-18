@@ -1,5 +1,5 @@
 from keras.preprocessing import image
-import scipy
+import scipy  # scipy==1.2.1
 import numpy as np
 from keras import backend as K
 from keras.applications import inception_v3
@@ -10,10 +10,10 @@ model = inception_v3.InceptionV3(weights='imagenet', include_top=False)
 K.set_learning_phase(0)
 
 layer_contributions = {
-    'mixed2': 0.2,
-    'mixed3': 3.,
-    'mixed4': 2.,
-    'mixed5': 1.5,
+    'mixed5': 0.2,
+    'mixed6': 2.,
+    'mixed7': 3.,
+    'mixed8': 1.5,
 }
 
 layer_dict = dict([(layer.name, layer) for layer in model.layers])
@@ -64,7 +64,7 @@ iterations = 20
 # if loss is too large, stop training
 max_loss = 10.
 
-base_image_dir = './images/origin.jpg'
+base_image_dir = './images/pizza.jpg'
 
 
 def preprocess_image(image_path):
@@ -128,6 +128,6 @@ for shape in succesive_shape:
 
     img += lost_detail
     shrunk_original_img = resize_img(original_img, shape)
-    save_img(img, fname='./images/dream_at_scale_'+str(shape)+'.png')
+    # save_img(img, fname='./images/dream_at_scale_'+str(shape)+'.png')
 
-save_img(img, fname='./images/final_dream.png')
+save_img(img, fname='./images/pizza_dream.png')
