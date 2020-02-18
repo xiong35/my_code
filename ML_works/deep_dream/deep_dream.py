@@ -1,12 +1,10 @@
+from keras.preprocessing import image
+import scipy
 import numpy as np
 from keras import backend as K
 from keras.applications import inception_v3
 
 model = inception_v3.InceptionV3(weights='imagenet', include_top=False)
-
-
-model.summary()
-input()
 
 # disable training
 K.set_learning_phase(0)
@@ -20,7 +18,7 @@ layer_contributions = {
 
 layer_dict = dict([(layer.name, layer) for layer in model.layers])
 
-loss = K.variable(0.)
+loss = 0.
 
 for layer_name in layer_contributions:
     coeff = layer_contributions[layer_name]
@@ -28,7 +26,7 @@ for layer_name in layer_contributions:
 
     scaling = K.prod(K.cast(K.shape(activation), 'float32'))
     # prevent the shadow at edges
-    loss += coeff*K.sum(K, square(activation[:, 2:-2, 2:-2, :]))/scaling
+    loss += coeff*K.sum(K.square(activation[:, 2:-2, 2:-2, :]))/scaling
 
 
 dream = model.input
@@ -66,7 +64,7 @@ iterations = 20
 # if loss is too large, stop training
 max_loss = 10.
 
-base_image_dir = ''  # TODO
+base_image_dir = './images/origin.jpg'
 
 img = preprocess_image(base_image_dir)
 
@@ -81,4 +79,54 @@ for i in range(1, num_octave):
 # reverse the list
 succesive_shape = succesive_shape[::-1]
 
-# TODO
+
+def resize_img(img, size):
+    img = np.copy(img)
+    factors = (1, float(size[0])/img.shape[1],
+               float(size[1])/img.shape[2], 1)
+    return scipy.ndimage.zoom(img, factors, order=1)
+
+
+def save_img(img, fname):
+    pil_img = deprocess_image(np.copy(img))
+    scipy.misc.imsave(fname, pil_img)
+
+
+def preprocess_image(image_path):
+    img = image.load_img(image_path)
+    img = image.img_to_array(img)
+    img = np.expand_dims(img, axis=0)
+    img = inception_v3.preprocess_input(img)
+    return img
+
+
+def deprocess_image(x):
+    if K.image_data_format() == 'channels_first':
+        x = x.reshape((3, x.shape[2], x.shape[3]))
+        x = x.transpose((1, 2, 0))
+    else:
+        x = x.reshape((x.shape[1], x.shape[2], 3))
+    x /= 2.
+    x += 0.5
+    x *= 255.
+    x = np.clip(x, 0, 255).astype('uint8')
+    return x
+
+
+original_img = np.copy(img)
+shrunk_original_img = resize_img(img, succesive_shape[0])
+
+for shape in succesive_shape:
+    print('Proccesing image shape: ', shape)
+    img = resize_img(img, shape)
+    img = gradient_ascent(img, iterations=iterations,
+                          step=step, max_loss=max_loss)
+    upscaled_shrunk_original_img = resize_img(shrunk_original_img, shape)
+    same_size_original = resize_img(original_img, shape)
+    lost_detail = same_size_original - upscaled_shrunk_original_img
+
+    img += lost_detail
+    shrunk_original_img = resize_img(original_img, shape)
+    save_img(img, fname='./images/dream_at_scale_'+str(shape)+'.png')
+
+save_img(img, fname='./images/final_dream.png')
