@@ -1,5 +1,5 @@
 
-# 读开源项目笔记
+# python问题笔记
 
 ## 一些普遍使用的操作
 
@@ -69,6 +69,10 @@ e.g.
 
     6 (7, 8, 9) {'a': 1, 'b': 2, 'c': 3}
 
+### > 命名空间
+
+详情点[这里](http://sebastianraschka.com/Articles/2014_python_scope_and_namespaces.html)
+
 ### > \_\_dict\_\_
 
 内置于对象里的参数，记录了对象包含的方法/变量  
@@ -78,15 +82,16 @@ e.g.
 类的\_\_dict\_\_里还会包含方法/魔法方法  
 实例里只有变量  
 
+如果字类dict里没找到就会去父类里找
+
 ### > \_\_, \_之类的用法
 
 详情点[这里](https://zhuanlan.zhihu.com/p/105783765)
 
 #### \_\_xxx\_\_：魔法方法
-加到dict。此方法不返回任何
-| ---- | --------------------------------------------------------------------------------------------- |
-| init | 构造函数                                                                                      |
-| del  | 析构函数(xxx.\_\_del\_\_()会执行del里的内容，却不会<br>删除对象，只有 del xxx 才会调用并删除) |
+
+如\_\_init\_\_, \_\_del\_\_（构造/析构函数）  
+如\_\_ad\_\_, \_\_eq\_\_（重载运算符）
 
 太多了真的写不下。。。
 
@@ -115,26 +120,40 @@ e.g.
 
 详情点[这里](https://blog.csdn.net/class_brick/article/details/81170697)和[这里](http://c.biancheng.net/view/2270.html)
 
-### > 类方法
+### > 类方法，类属性，静态方法
 
-TODO
+e.g.
+
+    class Foo:
+        count = o
+
+        @classmethod
+        def count(cls):
+            print(cls.count)
+
+        def __init__(self):
+            Foo.count += 1
+
+        # ...
+
+静态方法：  
+不依赖其他任何属性的方法可被封装成静态方法，静态方法不能继承，可看作全局函数，如：
+
+    @staticmethod
+    def getHelp(cls):
+        print(cls.help)
 
 详情点[这里](https://www.cnblogs.com/ForT/articles/10658593.html)
 
 ### > argparse包
 
-TODO
+拆解命令行参数的包  
+用于编写命令行直接执行的python程序  
 
 详情点[这里](https://www.jianshu.com/p/fef2d215b91d)
 
 ### > curse包
 
-TODO
+美化终端界面的包  
 
 详情点[这里](https://www.jianshu.com/p/e1bd64c2df4e)
-
-### > 其他小技巧
-
-TODO
-
-详情点[这里](https://mp.weixin.qq.com/s?__biz=MzU2ODYzNTkwMg==&mid=2247486466&idx=1&sn=cbe66ae9e143f4567593627a55084553&chksm=fc8bb493cbfc3d8586c9dff4817ef6db351915cd4b2b7218dbca1dec658a8d34f851fbed1c5e&scene=21#wechat_redirect)
