@@ -102,7 +102,7 @@ e.g.
 \_xxx 表示xxx是protected方法/变量  
 \_\_xxx 表示xxx是private  
 
-并不算规则，只是约定的规定  
+并不是规则，只是约定的规定  
 
 #### xxx\_
 
@@ -120,7 +120,7 @@ e.g.
 
 详情点[这里](https://blog.csdn.net/class_brick/article/details/81170697)和[这里](http://c.biancheng.net/view/2270.html)
 
-### > 类方法，类属性，静态方法
+### > 类方法，类属性
 
 e.g.
 
@@ -136,6 +136,8 @@ e.g.
 
         # ...
 
+### > 静态方法/抽象方法
+
 静态方法：  
 不依赖其他任何属性的方法可被封装成静态方法，静态方法不能继承，可看作全局函数，如：
 
@@ -144,6 +146,9 @@ e.g.
         print(cls.help)
 
 详情点[这里](https://www.cnblogs.com/ForT/articles/10658593.html)
+
+抽象方法：
+子类必须实现的方法
 
 ### > argparse包
 
@@ -157,3 +162,58 @@ e.g.
 美化终端界面的包  
 
 详情点[这里](https://www.jianshu.com/p/e1bd64c2df4e)
+
+### > 骚操作杂项
+
+    if answer not in 'yY':
+
+    a, b = c, d
+
+    some_list[::-1]
+
+    import numpy
+    print(numpy)
+
+    for i in range(10):
+        pass
+    else:
+        print('done')
+
+    os.system('pip3 install keras')
+
+    type(self).__name__ == some_cls.__name__
+
+    # in some_cls
+    def __str__(self):
+        return 'lol'
+    print(this_cls)
+    # 'lol'
+
+    try：
+        #try block
+    expect:
+        # expect situation 1
+    expect:
+        # expect situation 2
+    else:
+        # when the program goes well
+    finally:
+        # whatever happens, this will execute,
+        # if there IS an error,
+        # the error will be reported after finally
+    
+    class Student():
+        def __init__(self):
+            self._score = None
+        @property
+        def score(self):
+            return self._score
+        @score.setter # execute when 'score' is assigned a value
+        def score(self, value):
+            if value < 0 or value > 100:
+                raise ValueError('score must between 0 ~ 100!')
+            self._score = value
+    # with the above block
+    s = Student()
+    s.score = 66 # execute @setter
+    print(s.score) # execute @property
