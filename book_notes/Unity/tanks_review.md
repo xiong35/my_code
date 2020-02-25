@@ -1,6 +1,8 @@
 
 # Unity制作坦克大战
 
+所有代码都在[这里](https://github.com/xiong35/UnityWork)  
+
 ## 1 下载素材
 
 下载[坦克大战素材](http://www.sikiedu.com/course/90/material/2429/download)  
@@ -45,9 +47,7 @@
 
 添加Box Collider 2D, Rigidbody 2D, Player(script)  
 在Rigidbody里设置Freeze z轴, Gravity Scale = 0  
-编辑脚本如下:
-
-    FIXME
+编辑脚本  
 
 编译后脚本那一栏会有几个新的对象, 将子弹的预制体, 上下左右的贴图分别添加到对象中
 
@@ -70,7 +70,6 @@
 给子弹加一个布尔值来防止友伤  
 
 给子弹类添加一个脚本, 内容如下  
-TODO  
 
 在Tank代码里添加ExplorationPrefab, 添加预制体到Unity里的tank里  
 给Exploration设一个定时结束的脚本  

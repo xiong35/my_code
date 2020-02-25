@@ -44,7 +44,7 @@ public:
 
 int main(void)
 {
-    vector<int> A = {0,0,1,1,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1};
+    vector<int> A = {0,0,1,1,1,1,1,0,1,1,0,0,0,1,1,1,1};
     Solution solution;
     cout << "\n\n\n"
          << solution.longestOnes(A, 3);
