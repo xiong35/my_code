@@ -30,7 +30,7 @@
 
 ## 启动 MySQL 数据库
 
-打开C:\Windows\System32文件夹(64位32位电脑一般都是这个文件夹), 找到cmd.exe, 右键, 选择[以管理员身份运行]
+打开C:\Windows\System32文件夹(64位32位电脑一般都是这个文件夹), 找到cmd.exe, 右键, 选择[以管理员身份运行](一定要以管理员身份进!)
 
 切换目录:
 
@@ -39,6 +39,9 @@
 初始化数据库
 
     mysqld --initialize --console
+
+此时可能会报错:[找不到vcruntime140_1.dll]  
+解决方案:参考[这篇文章](https://blog.csdn.net/qq_42365534/article/details/102847013)
 
 输出应该如:
 
