@@ -98,7 +98,7 @@ def adaBoostTrainDS(dataArray, classLabels, numIter=40):
     m = np.shape(dataArray)[0]
     D = np.mat(np.ones((m, 1))/m)
     aggClassEst = np.mat(np.zeros((m, 1)))
-    for i in range(numIter):
+    for _ in range(numIter):
         bestStump, error, classEst = buildStump(
             dataArray, classLabels, D)
         print('D: ', D.T)

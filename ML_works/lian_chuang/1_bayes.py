@@ -1,7 +1,8 @@
 
 import numpy as np
 import pandas as pd
-np.random.seed(7)
+np.random.seed(777)
+
 
 class NaiveBayes:
     dataSet = []
@@ -15,8 +16,7 @@ class NaiveBayes:
         df = pd.read_table(filename, header=0, sep=" ", dtype=str)
         df.drop(columns=['PassengerId', 'Name',
                          'Ticket', 'Cabin'], axis=1, inplace=True)
-        # df.replace(to_replace='', value='0', regex=True, inplace=True)
-        df.dropna(axis=0, how='any', inplace=True)
+        df.replace(to_replace=np.nan, value='40', regex=True, inplace=True)
         self.labels = df.values[:, 0]
         self.dataSet = df.values[:, 1:]
 
@@ -129,8 +129,11 @@ class NaiveBayes:
         return pos0, pos1
 
     def strPred(self, data, index):
-        pos0 = self.posibilityMatOf0[index][data]
-        pos1 = self.posibilityMatOf1[index][data]
+        try:
+            pos0 = self.posibilityMatOf0[index][data]
+            pos1 = self.posibilityMatOf1[index][data]
+        except KeyError:
+            pos0, pos1 = -0.5, -0.5
         return pos0, pos1
 
     def train(self):
@@ -165,9 +168,10 @@ class NaiveBayes:
                 pos0 += cur0
             if pos0 > pos1:
                 predLabel.append('0')
-
+                predStrength.append(pos0)
             else:
                 predLabel.append('1')
+                predStrength.append(pos1)
         tp, tn, fp, fn = 0, 0, 0, 0
         for i in range(len(predLabel)):
             if predLabel[i] == testLabel[i] == '1':
@@ -188,6 +192,38 @@ class NaiveBayes:
         print('recall: ', recall)
         print('F1: ', F1)
 
+        return predStrength, testLabel
+
+    def plotROC(self, predStrengths, classLabels):
+        import matplotlib.pyplot as plt
+        predStrengths = np.array(predStrengths)
+        cur = [1.0, 1.0]
+        ySum = 0.0
+        numPosClass = sum(np.array(classLabels) == '1')
+        yStep = 1/float(numPosClass)
+        xStep = 1/float(len(classLabels)-numPosClass)
+        sortedIndices = predStrengths.argsort()
+        fig = plt.figure()
+        fig.clf()
+        ax = plt.subplot(111)
+        for index in sortedIndices[::-1]:
+            if classLabels[index] == '1':
+                delX = 0
+                delY = yStep
+            else:
+                delX = xStep
+                delY = 0
+            if delX != 0:
+                ySum += cur[1]*xStep
+            ax.plot([cur[0], cur[0]-delX], [cur[1], cur[1]-delY], c='b')
+            cur = [cur[0]-delX, cur[1]-delY]
+        print('ROC: ', ySum)
+        ax.plot([0, 1], [0, 1], 'b--')
+        plt.xlabel('False Positive')
+        plt.ylabel('True Positive')
+        plt.show()
+
 
 n = NaiveBayes(R'lian_chuang\data\titanic.txt')
-n.predict()
+predStrength, testLabel = n.predict()
+n.plotROC(predStrength, testLabel)

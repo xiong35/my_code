@@ -191,10 +191,10 @@ e.g.
 
     try：
         #try block
-    expect:
-        # expect situation 1
-    expect:
-        # expect situation 2
+    except:
+        # except situation 1
+    except:
+        # except situation 2
     else:
         # when the program goes well
     finally:
