@@ -151,6 +151,7 @@ class CART:
 
     def predict(self):
         tree = self.createTree(self.dataSet)
+        tree = self.prune(tree,self.testData)
         predVec = self.createFore(tree)
         pred = []
         acc = 0
@@ -164,39 +165,39 @@ class CART:
         acc /= len(self.testData)
         print('acc: ',acc)
 
-
-def getMean(tree):
-    if isTree(tree['right']):
-        tree['right'] = getMean(tree['right'])
-    if isTree(tree['left']):
-        tree['left'] = getMean(tree['left'])
-    return (tree['left']+tree['right'])/2.0
-
-
-def prune(tree, testData):
-    if np.shape(testData)[0] == 0:
-        return getMean(tree)
-    if isTree(tree['left']) or isTree(tree['right']):
-        lSet, rSet = binSplitDataSet(testData,
-                                     tree['spInd'], tree['spVal'])
-    if isTree(tree['left']):
-        tree['left'] = prune(tree['left'], lSet)
-    if isTree(tree['right']):
-        tree['right'] = prune(tree['right'], rSet)
-    if (not isTree(tree['left'])) and (not isTree(tree['right'])):
-        lSet, rSet = binSplitDataSet(testData,
-                                     tree['spInd'], tree['spVal'])
-        errorNoMerge = sum(np.power(lSet[:, 0]-tree['left'], 2)) +\
-            sum(np.power(rSet[:, 0]-tree['right'], 2))
-        treeMean = (tree['left']+tree['right'])/2
-        errorMerge = sum(np.power(testData[:, 0]-treeMean, 2))
-        if errorNoMerge > errorMerge:
-            print("merge")
-            return treeMean
+    def prune(self,tree, testData):
+        if np.shape(testData)[0] == 0:
+            return getMean(tree)
+        if isTree(tree.lChild) or isTree(tree.rChild):
+            lSet, rSet = self.binSplitDataSet(testData,
+                                        tree.spInd, tree.spVal)
+        if isTree(tree.lChild):
+            tree.lChild = self.prune(tree.lChild, lSet)
+        if isTree(tree.rChild):
+            tree.rChild = self.prune(tree.rChild, rSet)
+        if (not isTree(tree.lChild)) and (not isTree(tree.rChild)):
+            lSet, rSet = self.binSplitDataSet(testData,
+                                        tree.spInd, tree.spVal)
+            errorNoMerge = sum(np.power(lSet[:, 0]-tree.lChild, 2)) +\
+                sum(np.power(rSet[:, 0]-tree.rChild, 2))
+            treeMean = (tree.lChild+tree.rChild)/2
+            errorMerge = sum(np.power(testData[:, 0]-treeMean, 2))
+            if errorNoMerge > errorMerge:
+                print("merge")
+                return treeMean
+            else:
+                return tree
         else:
             return tree
-    else:
-        return tree
+
+
+def getMean(tree):
+    if isTree(tree.rChild):
+        tree.rChild = getMean(tree.rChild)
+    if isTree(tree.lChild):
+        tree.lChild = getMean(tree.lChild)
+    return (tree.lChild+tree.rChild)/2.0
+
 
 
 c = CART(R'lian_chuang\data\titanic.txt')
