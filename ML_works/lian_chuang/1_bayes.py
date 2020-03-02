@@ -1,7 +1,7 @@
 
 import numpy as np
 import pandas as pd
-
+np.random.seed(7)
 
 class NaiveBayes:
     dataSet = []
@@ -12,10 +12,11 @@ class NaiveBayes:
     NumOf0 = 0
 
     def __init__(self, filename):
-        df = pd.read_table(filename, header=0, sep=" ",
-                           keep_default_na=False, dtype=str)
+        df = pd.read_table(filename, header=0, sep=" ", dtype=str)
         df.drop(columns=['PassengerId', 'Name',
                          'Ticket', 'Cabin'], axis=1, inplace=True)
+        # df.replace(to_replace='', value='0', regex=True, inplace=True)
+        df.dropna(axis=0, how='any', inplace=True)
         self.labels = df.values[:, 0]
         self.dataSet = df.values[:, 1:]
 
@@ -66,46 +67,127 @@ class NaiveBayes:
         for string in oneColOfData:
             if string not in strSet:
                 strSet.add(string)
-        strNum = len(strSet)
-        p0Num = np.zeros(strNum)
-        p1Num = np.zeros(strNum)
+        strSet = list(strSet)
+        p0Num = dict()
+        p1Num = dict()
+        for string in strSet:
+            p0Num[string] = 1
+            p1Num[string] = 1
         for index, string in enumerate(oneColOfData):
             if trainLabel[index] == '1':
-                p1Num[oneColOfData.index(string)] += 1
+                p1Num[string] += 1
             else:
-                p0Num[oneColOfData.index(string)] += 1
-        p0Pos = np.log(p0Num/self.NumOf0+1e-5)
-        p1Pos = np.log(p1Num/self.NumOf1+1e-5)
+                p0Num[string] += 1
+        for string in strSet:
+            p0Num[string] = np.log(p0Num[string]/(self.NumOf0+1))
+            p1Num[string] = np.log(p1Num[string]/(self.NumOf1+1))
+        self.posibilityMatOf0.append(p0Num)
+        self.posibilityMatOf1.append(p1Num)
 
-        self.posibilityMatOf0.append(p0Pos)
-        self.posibilityMatOf1.append(p1Pos)
-
-    def numPosibility(self,oneColOfData, trainLabel):
-        minNum =  oneColOfData.min()
+    def numPosibility(self, oneColOfData, trainLabel):
+        oneColOfData = oneColOfData.astype('float32')
+        minNum = oneColOfData.min()
         maxNum = oneColOfData.max()
         step = (maxNum - minNum)/10
-        p0Num = np.ones(10)
-        p1Num = np.ones(10)
+        p0Num = []
+        p1Num = []
+        for i in range(10):
+            p0Num.append([int(minNum+i*step), 1])
+            p1Num.append([int(minNum+i*step), 1])
+        p0Num.append([float('inf'), 1])
+        p1Num.append([float('inf'), 1])
         for index, num in enumerate(oneColOfData):
             if trainLabel[index] == '1':
+                for i in range(11):
+                    if num < p1Num[i][0]:
+                        p1Num[i][1] += 1
+                        break
+            else:
+                for i in range(11):
+                    if num < p0Num[i][0]:
+                        p0Num[i][1] += 1
+                        break
+        for i in range(len(p0Num)):
+            p0Num[i][1] = np.log(p0Num[i][1]/(self.NumOf0+1))
+        for i in range(len(p1Num)):
+            p1Num[i][1] = np.log(p1Num[i][1]/(self.NumOf1+1))
+        self.posibilityMatOf0.append(p0Num)
+        self.posibilityMatOf1.append(p1Num)
 
+    def numPred(self, data, index):
+        data = float(data)
+        pos0 = 0
+        pos1 = 0
+        for i in range(len(self.posibilityMatOf0[index])):
+            if data < self.posibilityMatOf0[index][i][0]:
+                pos0 = self.posibilityMatOf0[index][i][1]
+                break
+        for i in range(len(self.posibilityMatOf0[index])):
+            if data < self.posibilityMatOf1[index][i][0]:
+                pos1 = self.posibilityMatOf1[index][i][1]
+                break
+        return pos0, pos1
 
+    def strPred(self, data, index):
+        pos0 = self.posibilityMatOf0[index][data]
+        pos1 = self.posibilityMatOf1[index][data]
+        return pos0, pos1
 
     def train(self):
         # code for training your naive bayes algorithm
-        (trainData, trainLabel), (testData, testLabel) = self.holdOutSplit()
+        (trainData, trainLabel), (testData, testLabel) = self.boostStrap()
         for i in range(len(trainLabel)):
             if trainLabel[i] == '1':
                 self.NumOf1 += 1
             else:
                 self.NumOf0 += 1
-        self.strPosibility(trainData[:, 3], trainLabel)
+        for i in range(len(trainData[0])):
+            if i in [2, 5]:
+                self.numPosibility(trainData[:, i], trainLabel)
+            else:
+                self.strPosibility(trainData[:, i], trainLabel)
+        return testData, testLabel
 
     def predict(self):
         # code for predicting
-        pass
+        testData, testLabel = self.train()
+        predLabel = []
+        predStrength = []
+        for data in testData:
+            pos0 = self.NumOf0/(self.NumOf0+self.NumOf1)
+            pos1 = self.NumOf1/(self.NumOf0+self.NumOf1)
+            for featIndex in range(len(data)):
+                if featIndex in [2, 5]:
+                    cur0, cur1 = self.numPred(data[featIndex], featIndex)
+                else:
+                    cur0, cur1 = self.strPred(data[featIndex], featIndex)
+                pos1 += cur1
+                pos0 += cur0
+            if pos0 > pos1:
+                predLabel.append('0')
+
+            else:
+                predLabel.append('1')
+        tp, tn, fp, fn = 0, 0, 0, 0
+        for i in range(len(predLabel)):
+            if predLabel[i] == testLabel[i] == '1':
+                tp += 1
+            elif predLabel[i] == testLabel[i] == '0':
+                tn += 1
+            elif predLabel[i] == '0' and testLabel[i] == '1':
+                fn += 1
+            elif predLabel[i] == '1' and testLabel[i] == '0':
+                fp += 1
+        acc = (tp + tn)/(tp+fn+tn+fp)
+        precision = tp/(tp+fp)
+        recall = tp/(tp+fn)
+        F1 = 2/(1/precision+1/recall)
+
+        print('acc: ', acc)
+        print('precisio: ', precision)
+        print('recall: ', recall)
+        print('F1: ', F1)
 
 
 n = NaiveBayes(R'lian_chuang\data\titanic.txt')
-(a, b), (c, d) = n.boostStrap()
-n.train()
+n.predict()
