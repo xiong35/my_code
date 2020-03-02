@@ -1,15 +1,28 @@
 
 import numpy as np
+import operator
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 class knn:
     filename = None
     testFeat = None
     testLabels = None
+    data = None
+    labels = None
+    k = 7
+    predictLabel = None
 
     def __init__(self, filename):
         self.filename = filename
-        pass
+        self.data, self.labels = self.normalize()
+        retLabels = []
+        for testData in self.testFeat:
+            print('doing')
+            retLabels.append(self.findMax(testData))
+        self.predictLabel = retLabels
+        self.plot()
 
     def line2Data(self, line):
         line = line.strip('\n')
@@ -18,11 +31,11 @@ class knn:
         for feat in line[:-1]:
             curLine.append(float(feat))
         if str(line[-1]) == 'Iris-setosa':
-            curLine.append(-1)
+            curLine.append('r')
         elif str(line[-1]) == 'Iris-versicolor':
-            curLine.append(0)
+            curLine.append('g')
         elif str(line[-1]) == 'Iris-virginica':
-            curLine.append(1)
+            curLine.append('b')
         return curLine
     # 处理数据 done
 
@@ -30,7 +43,7 @@ class knn:
         with open(self.filename) as fr:
             arrayOLines = fr.readlines()[:-1]
             numOflines = len(arrayOLines)
-            numOfTestData = int(numOflines*0.2)
+            numOfTestData = int(numOflines*0.1)
             np.random.seed(7)
             # 随机抽测试数据
             indexOfTest = np.random.randint(0, numOflines, numOfTestData)
@@ -41,8 +54,8 @@ class knn:
                 line = self.line2Data(arrayOLines[index])
                 testFeat.append(line[:-1])
                 testLabels.append(line[-1])
-            self.testFeat = np.matrix(testFeat)
-            self.testLabels = np.matrix(testLabels)
+            self.testFeat = np.array(testFeat)
+            self.testLabels = np.array(testLabels)
             # 将"训练"数据整合成矩阵
             retMat = []
             retLabels = []
@@ -52,8 +65,8 @@ class knn:
                 line = self.line2Data(arrayOLines[index])
                 retMat.append(line[:-1])
                 retLabels.append(line[-1])
-            retMat = np.matrix(retMat)
-            retLabels = np.matrix(retLabels)
+            retMat = np.array(retMat)
+            retLabels = np.array(retLabels)
             return retMat, retLabels
 
     def normalize(self):
@@ -65,38 +78,39 @@ class knn:
 
         self.testFeat -= mean
         self.testFeat /= std
-        print(self.testFeat)
         return mat, labels
 
     # 计算测试样本与所有训练样本的距离
-    # def calculateDist(self):
-    #     # def classify(inX, dataSet, labels, k):
-    #     data, labels = self.normalize()
-    #     dataSize = data.shape[0]
-    #     loss = 0
+    def findMax(self, testData):
+        # def classify(inX, dataSet, labels, k):
+        diffMat = self.data-testData
+        sqdiffMat = diffMat ** 2
+        sqDistance = sqdiffMat.sum(axis=1)
+        distances = sqDistance ** 0.5
+        sortedDist = distances.argsort()
+        classCount = {}
+        for i in range(self.k):
+            voteIlable = self.labels[sortedDist[i]]
+            classCount[voteIlable] = classCount.get(voteIlable, 0) + 1
+        sortedClassCount = sorted(classCount.items(),
+                                  key=operator.itemgetter(1), reverse=True)
+        return sortedClassCount[0][0]
 
-    #     dataSize = dataSet.shape[0]
-    #     diffMat = np.tile(inX, (dataSize, 1)) - dataSet
-    #     sqdiffMat = diffMat ** 2
-    #     sqDistance = sqdiffMat.sum(axis=1)
-    #     distances = sqDistance ** 0.5
-    #     sortedDist = distances.argsort()
-    #     classCount = {}
-    #     for i in range(k):
-    #         voteIlable = labels[sortedDist[i]]
-    #         classCount[voteIlable] = classCount.get(voteIlable, 0) + 1
-    #     sortedClassCount = sorted(classCount.items(),
-    #                               key=operator.itemgetter(1), reverse=True)
-    #     return sortedClassCount[0][0]
-
-    # 对距离进行升序排序，取前k个
-    def sortDist(self):
-        pass
-
-    # 计算k个样本中最多的分类
-    def findMax(self):
-        pass
+    def plot(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        featX = self.data[:, 0].tolist()
+        featY = self.data[:, 1].tolist()
+        featZ = self.data[:, 2].tolist()
+        originLabels = list(self.labels)
+        ax.scatter3D(featX, featY, featZ, c=originLabels, alpha=0.2)
+        testFeatX = self.testFeat[:, 0].tolist()
+        testFeatY = self.testFeat[:, 1].tolist()
+        testFeatZ = self.testFeat[:, 2].tolist()
+        predictLabel = list(self.predictLabel)
+        ax.scatter3D(testFeatX, testFeatY, testFeatZ,
+                     c=predictLabel,marker='+',alpha=1)
+        plt.show()
 
 
 k = knn('lian_chuang\\data\\iris.data')
-k.normalize()
