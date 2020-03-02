@@ -9,42 +9,62 @@ class TreeNode:
     spVal = None
     spInd = None
 
-    def isTree(self):
-        pass
 
-    def regLeaf(self, dataSet):
-        return np.mean(dataSet[:, 0])
+def isTree(tree):
+    if tree.__class__ == TreeNode:
+        return True
+    return False
 
-    def regErr(self, dataSet):
-        # total error, not MSE
-        return np.var(dataSet[:, 0])*np.shape(dataSet)[0]
 
-    def modelLeaf(self, dataSet):
-        ws, X, Y = self.linearSolve(dataSet)
-        return ws
+def regLeaf(dataSet):
+    return np.mean(dataSet[:, 0])
 
-    def modelErr(self, dataSet):
-        ws, X, Y = self.linearSolve(dataSet)
-        yHat = np.dot(X, ws)
-        return np.var(yHat-Y)
 
-    def linearSolve(self, dataSet):
-        m, n = np.shape(dataSet)
-        X = np.mat(np.ones((m, n)))
-        Y = np.mat(np.ones((m, 1)))
-        X[:, 1:n] = dataSet[:, 1:n]
-        Y = dataSet[:, 0]
-        xTx = np.mat(np.dot(X.T, X))
-        if np.linalg.det(xTx) == 0:
-            raise NameError('This matrix is singular, cannot do inverse, \
-                try to increase the second value of ops')
-        ws = np.dot(xTx.I, np.dot(X.T, Y))
-        return ws, X, Y
+def regErr(dataSet):
+    # total error, not MSE
+    return np.var(dataSet[:, 0])*len(dataSet)
+
+
+def modelLeaf(dataSet):
+    ws, X, Y = linearSolve(dataSet)
+    return ws
+
+
+def modelErr(dataSet):
+    ws, X, Y = linearSolve(dataSet)
+    yHat = np.dot(X, ws)
+    return np.var(yHat-Y)
+
+
+def linearSolve(dataSet):
+    m, n = np.shape(dataSet)
+    X = np.mat(np.ones((m, n)))
+    Y = np.mat(np.ones((m, 1)))
+    X[:, 1:n] = dataSet[:, 1:n]
+    Y = dataSet[:, 0]
+    xTx = np.mat(np.dot(X.T, X))
+    if np.linalg.det(xTx) == 0:
+        raise NameError('This matrix is singular, cannot do inverse, \
+            try to increase the second value of ops')
+    ws = np.dot(xTx.I, np.dot(X.T, Y))
+    return ws, X, Y
+
+
+def regTreeEval(model, inDat):
+    return float(model)
+
+
+def modelTreeEval(model, inDat):
+    n = np.shape(inDat)[1]
+    X = np.mat(np.ones((1, n+1)))
+    X[:, 1: n+1] = inDat
+    return float(np.dot(X[:, 1:], model))
 
 
 class CART:
     Tree = None
     dataSet = None
+    testData = None
 
     def __init__(self, filename):
         df = pd.read_table(filename, header=0, sep=" ", dtype=str)
@@ -56,15 +76,16 @@ class CART:
         df.replace(to_replace='Q', value='-1', regex=True, inplace=True)
         df.replace(to_replace='female', value='0', regex=True, inplace=True)
         df.replace(to_replace='male', value='1', regex=True, inplace=True)
-        self.dataSet = np.array(df).astype('float32')
-        print(self.dataSet)
+        self.dataSet = np.mat(df).astype('float32')
+        self.testData = self.dataSet[:150]
+        self.dataSet = self.dataSet[150:]
 
     def binSplitDataSet(self, dataSet, feature, value):
         mat0 = dataSet[np.nonzero(dataSet[:, feature] > value)[0], :]
         mat1 = dataSet[np.nonzero(dataSet[:, feature] <= value)[0], :]
         return mat0, mat1
 
-    def createTree(self, dataSet, leafType=TreeNode.regLeaf, errType=TreeNode.regErr, ops=(1, 4)):
+    def createTree(self, dataSet, leafType=regLeaf, errType=regErr, ops=(1, 4)):
         dataSet = np.mat(dataSet)
         feat, val = self.chooseBestSplit(dataSet, leafType, errType, ops)
         if feat == None:
@@ -77,7 +98,7 @@ class CART:
         retTree.rChild = self.createTree(rSet, leafType, errType, ops)
         return retTree
 
-    def chooseBestSplit(self, dataSet, leafType=TreeNode.regLeaf, errType=TreeNode.regErr, ops=(1, 4)):
+    def chooseBestSplit(self, dataSet, leafType=regLeaf, errType=regErr, ops=(1, 4)):
         # minimum step of descent
         tolS = ops[0]
         # minimum num of samples to split
@@ -89,7 +110,7 @@ class CART:
         bestS = np.inf
         bestIndex = 0
         bestValue = 0
-        for featIndex in range(n-1):
+        for featIndex in range(1, n):
             for splitVal in set(dataSet[:, featIndex].T.tolist()[0]):
                 mat0, mat1 = self.binSplitDataSet(dataSet, featIndex, splitVal)
                 if (np.shape(mat0)[0] < tolN) or (np.shape(mat1)[0] < tolN):
@@ -105,6 +126,43 @@ class CART:
         if (np.shape(mat0)[0] < tolN) or (np.shape(mat1)[0] < tolN):
             return None, leafType(dataSet)
         return bestIndex, bestValue
+
+    def createFore(self, tree, modelEval=regTreeEval):
+        m = len(self.testData)
+        yHat = np.mat(np.zeros((m, 1)))
+        for i in range(m):
+            yHat[i, 0] = self.treeForecast(tree, self.testData[i], modelEval)
+        return yHat
+
+    def treeForecast(self, tree, inData, modelEval):
+        if not isTree(tree):
+            return modelEval(tree, inData)
+        # inData is a 1*m matrix
+        if inData.tolist()[0][tree.spInd] > tree.spVal:
+            if isTree(tree.lChild):
+                return self.treeForecast(tree.lChild, inData, modelEval)
+            else:
+                return modelEval(tree.lChild, inData)
+        else:
+            if isTree(tree.rChild):
+                return self.treeForecast(tree.rChild, inData, modelEval)
+            else:
+                return modelEval(tree.rChild, inData)
+
+    def predict(self):
+        tree = self.createTree(self.dataSet)
+        predVec = self.createFore(tree)
+        pred = []
+        acc = 0
+        for i in range(len(self.testData)):
+            if predVec[i][0] > 0.5:
+                pred.append(1)
+            else:
+                pred.append(0)
+            if pred[i] == self.testData[i,0]:
+                acc += 1
+        acc /= len(self.testData)
+        print('acc: ',acc)
 
 
 def getMean(tree):
@@ -141,42 +199,9 @@ def prune(tree, testData):
         return tree
 
 
-def regTreeEval(model, inDat):
-    return float(model)
-
-
-def modelTreeEval(model, inDat):
-    n = np.shape(inDat)[1]
-    X = np.mat(np.ones((1, n+1)))
-    X[:, 1:n+1] = inDat
-    return float(np.dot(X[:, 1:], model))
-
-
-def treeForecast(tree, inData, modelEval):
-    if not isTree(tree):
-        return modelEval(tree, inData)
-    # inData is a 1*m matrix
-    if inData.tolist()[0][tree['spInd']] > tree['spVal']:
-        if isTree(tree['left']):
-            return treeForecast(tree['left'], inData, modelEval)
-        else:
-            return modelEval(tree['left'], inData)
-    else:
-        if isTree(tree['right']):
-            return treeForecast(tree['right'], inData, modelEval)
-        else:
-            return modelEval(tree['right'], inData)
-
-
-def createFore(tree, testData, modelEval):
-    m = len(testData)
-    yHat = np.mat(np.zeros((m, 1)))
-    for i in range(m):
-        yHat[i, 0] = treeForecast(tree, testData[i], modelEval)
-    return yHat
-
-
 c = CART(R'lian_chuang\data\titanic.txt')
+c.predict()
+
 
 # myTree = createTree(myData, modelLeaf, modelErr, ops=(0.1, 2))
 # # print(myTree)
