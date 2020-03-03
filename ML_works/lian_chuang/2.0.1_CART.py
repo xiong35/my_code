@@ -1,7 +1,8 @@
 
+import operator
+from math import log
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 
 class TreeNode:
@@ -36,8 +37,16 @@ class CART:
     testData = None
 
     def __init__(self, filename):
-        df = pd.read_csv(filename, header=0, sep=",", dtype=float)
-        self.dataSet = np.mat(df)
+        df = pd.read_table(filename, header=0, sep=" ", dtype=str)
+        df.drop(columns=['PassengerId', 'Name',
+                         'Ticket', 'Cabin'], axis=1, inplace=True)
+        df.replace(to_replace=np.nan, value='40', regex=True, inplace=True)
+        df.replace(to_replace='C', value='0', regex=True, inplace=True)
+        df.replace(to_replace='S', value='1', regex=True, inplace=True)
+        df.replace(to_replace='Q', value='-1', regex=True, inplace=True)
+        df.replace(to_replace='female', value='0', regex=True, inplace=True)
+        df.replace(to_replace='male', value='1', regex=True, inplace=True)
+        self.dataSet = np.mat(df).astype('float32')
         self.testData = self.dataSet[:150]
         self.dataSet = self.dataSet[150:]
 
@@ -46,7 +55,7 @@ class CART:
         mat1 = dataSet[np.nonzero(dataSet[:, feature] <= value)[0], :]
         return mat0, mat1
 
-    def createTree(self, dataSet, ops=(1.5, 5)):
+    def createTree(self, dataSet,   ops=(1, 4)):
         dataSet = np.mat(dataSet)
         feat, val = self.chooseBestSplit(dataSet, ops)
         if feat == None:
@@ -59,7 +68,7 @@ class CART:
         retTree.rChild = self.createTree(rSet, ops)
         return retTree
 
-    def chooseBestSplit(self, dataSet, ops=(1.5, 5)):
+    def chooseBestSplit(self, dataSet,   ops=(1, 4)):
         # minimum step of descent
         tolS = ops[0]
         # minimum num of samples to split
@@ -113,23 +122,22 @@ class CART:
     def predict(self):
         tree = self.createTree(self.dataSet)
         tree = self.prune(tree, self.testData)
-        self.Tree = tree
         predVec = self.createFore(tree)
         pred = []
         acc = 0
         for i in range(len(self.testData)):
-            if predVec[i][0] > 0.24:
+            if predVec[i][0] > 0.5:
                 pred.append(1)
             else:
-                pred.append(-1)
-            if pred[i]*self.testData[i, 0] > 0:
+                pred.append(0)
+            if pred[i] == self.testData[i, 0]:
                 acc += 1
         acc /= len(self.testData)
         print('acc: ', acc)
 
     def prune(self, tree, testData):
         if np.shape(testData)[0] == 0:
-            return self.getMean(tree)
+            return getMean(tree)
         if isTree(tree.lChild) or isTree(tree.rChild):
             lSet, rSet = self.binSplitDataSet(testData,
                                               tree.spInd, tree.spVal)
@@ -152,92 +160,70 @@ class CART:
         else:
             return tree
 
-    def getMean(self, tree):
-        if isTree(tree.rChild):
-            tree.rChild = self.getMean(tree.rChild)
-        if isTree(tree.lChild):
-            tree.lChild = self.getMean(tree.lChild)
-        return (tree.lChild+tree.rChild)/2.0
+
+def getMean(tree):
+    if isTree(tree.rChild):
+        tree.rChild = getMean(tree.rChild)
+    if isTree(tree.lChild):
+        tree.lChild = getMean(tree.lChild)
+    return (tree.lChild+tree.rChild)/2.0
 
 
-c = CART(R'lian_chuang\data\myTitanic.csv')
+c = CART(R'lian_chuang\data\titanic.txt')
 c.predict()
 
 
-decisionNode = dict(boxstyle='round', fc='0.8')
-leafNode = dict(boxstyle='round4', fc='0.8')
-arrow_args = dict(arrowstyle='<-')
+##############################################
+############ classification tree #############
+##############################################
+
+def calcShannonEnt(dataSet):
+    numEntries = len(dataSet)
+    labelCounts = {}
+    for featVector in dataSet:
+        currentLabel = featVector[-1]
+        if currentLabel not in labelCounts.keys():
+            labelCounts[currentLabel] = 0
+        labelCounts[currentLabel] += 1
+    shannonEnt = 0.0
+    for key in labelCounts:
+        prob = float(labelCounts[key])/numEntries
+        shannonEnt -= prob*log(prob, 2)
+    return shannonEnt
 
 
-def getNumLeafs(myTree):
-    numLeafs = 0
-    if not isTree(myTree):
-        return 1
-    numLeafs += getNumLeafs(myTree.lChild)+getNumLeafs(myTree.rChild)
-    return numLeafs
+def chooseBestFeatureToSplit(dataSet):
+    # in this case, the dataSet's last value is the y value
+    # no need to be taken into consideration
+    numFeatures = len(dataSet[0])-1
+    # set original value
+    bestEntropy = calcShannonEnt(dataSet)
+    bestInfoGain = 0.0
+    bestFeature = -1
+    for i in range(numFeatures):
+        # set the feature in i axis
+        featList = [example[i] for example in dataSet]
+        uniqueVals = set(featList)
+        newEntropy = 0.0
+        for value in uniqueVals:
+            # method binSplitDataSet is in class CART
+            subDataSet = binSplitDataSet(dataSet, i, value)
+            # calculate posterior prob
+            prob = len(subDataSet)/float(len(dataSet))
+            newEntropy += prob*calcShannonEnt(subDataSet)
+        infoGain = bestEntropy - newEntropy
+        if infoGain > bestInfoGain:
+            bestInfoGain = infoGain
+            bestFeature = i
+    return bestFeature
 
 
-def getTreeDepth(myTree):
-    if not isTree(myTree):
-        return 1
-    return max(getTreeDepth(myTree.lChild), getTreeDepth(myTree.rChild))+1
-
-
-def plotNode(nodeTxt, centerPt, parentPt, nodeType):
-    plt.annotate(nodeTxt, xy=parentPt, xycoords='axes fraction',
-                 xytext=centerPt, textcoords='axes fraction',
-                 va='center', ha='center', size=6, bbox=nodeType, arrowprops=arrow_args)
-
-
-def plotMidText(centerPt, parentPt, txtString):
-    xMid = (parentPt[0] - centerPt[0]) / 2.0 + centerPt[0]
-    yMid = (parentPt[1] - centerPt[1]) / 2.0 + centerPt[1]
-    plt.text(xMid, yMid, txtString, size=6,)
-
-
-def plotTree(myTree, parentPt, nodeTxt):
-    numLeafs = getNumLeafs(myTree)
-    # depth = getTreeDepth(myTree)
-    firstStr = 'id: ' + str(myTree.spInd)
-    centerPt = (plotTree.xOff + (1.0 + float(numLeafs)) / 2.0 / plotTree.totalW,
-                plotTree.yOff)
-    plotMidText(centerPt, parentPt, nodeTxt)
-    plotNode(firstStr, centerPt, parentPt, decisionNode)
-    plotTree.yOff = plotTree.yOff - 1.0 / plotTree.totalD
-
-    if isTree(myTree.lChild):
-        plotTree(myTree.lChild, centerPt, '<%.2f' % myTree.spVal)
-    else:
-        plotTree.xOff = plotTree.xOff + 1.0 / plotTree.totalW
-        plotNode('0' if myTree.lChild < 0.24 else '1', (plotTree.xOff,
-                                                        plotTree.yOff), centerPt, leafNode)
-        plotMidText((plotTree.xOff, plotTree.yOff),
-                    centerPt, '<%.2f' % myTree.spVal)
-
-    if isTree(myTree.rChild):
-        plotTree(myTree.rChild, centerPt, '>%.2f' % myTree.spVal)
-    else:
-        plotTree.xOff = plotTree.xOff + 1.0 / plotTree.totalW
-        plotNode('0' if myTree.rChild < 0.24 else '1', (plotTree.xOff,
-                                                        plotTree.yOff), centerPt, leafNode)
-        plotMidText((plotTree.xOff, plotTree.yOff),
-                    centerPt, '>%.2f' % myTree.spVal)
-    plotTree.yOff = plotTree.yOff + 1.0 / plotTree.totalD
-
-
-def createPlot(inTree):
-    fig = plt.figure(1, facecolor='white')
-    fig.clf()
-    plt.axis('off')
-    plt.subplots(111, frameon=False)
-    plt.subplots()
-    plotTree.totalW = float(getNumLeafs(inTree))
-    plotTree.totalD = float(getTreeDepth(inTree))
-    plotTree.xOff = -0.5/plotTree.totalW
-    plotTree.yOff = 1.0
-    plotTree(inTree, (0.5, 1.0), '')
-    plt.axis('off')
-    plt.show()
-
-
-createPlot(c.Tree)
+def majorityCnt(classList):
+    classCount = {}
+    for vote in classList:
+        if vote not in classCount.keys():
+            classCount[vote] = 0
+        classCount[vote] += 1
+    sortedClassCount = sorted(classCount.iteritems(),
+                              key=operator.itemgetter(1), reverse=True)
+    return sortedClassCount[0][0]

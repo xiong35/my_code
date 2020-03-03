@@ -1,6 +1,7 @@
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 class TreeNode:
@@ -35,16 +36,8 @@ class CART:
     testData = None
 
     def __init__(self, filename):
-        df = pd.read_table(filename, header=0, sep=" ", dtype=str)
-        df.drop(columns=['PassengerId', 'Name',
-                         'Ticket', 'Cabin'], axis=1, inplace=True)
-        df.replace(to_replace=np.nan, value='40', regex=True, inplace=True)
-        df.replace(to_replace='C', value='0', regex=True, inplace=True)
-        df.replace(to_replace='S', value='1', regex=True, inplace=True)
-        df.replace(to_replace='Q', value='-1', regex=True, inplace=True)
-        df.replace(to_replace='female', value='0', regex=True, inplace=True)
-        df.replace(to_replace='male', value='1', regex=True, inplace=True)
-        self.dataSet = np.mat(df).astype('float32')
+        df = pd.read_csv(filename, header=0, sep=",", dtype=float)
+        self.dataSet = np.mat(df)
         self.testData = self.dataSet[:150]
         self.dataSet = self.dataSet[150:]
 
@@ -53,7 +46,7 @@ class CART:
         mat1 = dataSet[np.nonzero(dataSet[:, feature] <= value)[0], :]
         return mat0, mat1
 
-    def createTree(self, dataSet,   ops=(1, 4)):
+    def createTree(self, dataSet, ops=(1.5, 5)):
         dataSet = np.mat(dataSet)
         feat, val = self.chooseBestSplit(dataSet, ops)
         if feat == None:
@@ -66,7 +59,7 @@ class CART:
         retTree.rChild = self.createTree(rSet, ops)
         return retTree
 
-    def chooseBestSplit(self, dataSet,   ops=(1, 4)):
+    def chooseBestSplit(self, dataSet, ops=(1.5, 5)):
         # minimum step of descent
         tolS = ops[0]
         # minimum num of samples to split
@@ -120,22 +113,23 @@ class CART:
     def predict(self):
         tree = self.createTree(self.dataSet)
         tree = self.prune(tree, self.testData)
+        self.Tree = tree
         predVec = self.createFore(tree)
         pred = []
         acc = 0
         for i in range(len(self.testData)):
-            if predVec[i][0] > 0.5:
+            if predVec[i][0] > 0.24:
                 pred.append(1)
             else:
-                pred.append(0)
-            if pred[i] == self.testData[i, 0]:
+                pred.append(-1)
+            if pred[i]*self.testData[i, 0] > 0:
                 acc += 1
         acc /= len(self.testData)
         print('acc: ', acc)
 
     def prune(self, tree, testData):
         if np.shape(testData)[0] == 0:
-            return getMean(tree)
+            return self.getMean(tree)
         if isTree(tree.lChild) or isTree(tree.rChild):
             lSet, rSet = self.binSplitDataSet(testData,
                                               tree.spInd, tree.spVal)
@@ -158,69 +152,14 @@ class CART:
         else:
             return tree
 
+    def getMean(self, tree):
+        if isTree(tree.rChild):
+            tree.rChild = self.getMean(tree.rChild)
+        if isTree(tree.lChild):
+            tree.lChild = self.getMean(tree.lChild)
+        return (tree.lChild+tree.rChild)/2.0
 
-def getMean(tree):
-    if isTree(tree.rChild):
-        tree.rChild = getMean(tree.rChild)
-    if isTree(tree.lChild):
-        tree.lChild = getMean(tree.lChild)
-    return (tree.lChild+tree.rChild)/2.0
 
-
-c = CART(R'lian_chuang\data\titanic.txt')
+c = CART(R'lian_chuang\data\myTitanic.csv')
 c.predict()
 
-
-############ classification tree #############
-
-from math import log
-import operator
-
-def calcShannonEnt(dataSet):
-    numEntries = len(dataSet)
-    labelCounts = {}
-    for featVector in dataSet:
-        currentLabel = featVector[-1]
-        if currentLabel not in labelCounts.keys():
-            labelCounts[currentLabel] = 0
-        labelCounts[currentLabel] += 1
-    shannonEnt = 0.0
-    for key in labelCounts:
-        prob = float(labelCounts[key])/numEntries
-        shannonEnt -= prob*log(prob, 2)
-    return shannonEnt
-
-def chooseBestFeatureToSplit(dataSet):
-    # in this case, the dataSet's last value is the y value
-    # no need to be taken into consideration
-    numFeatures = len(dataSet[0])-1
-    # set original value
-    bestEntropy = calcShannonEnt(dataSet)
-    bestInfoGain = 0.0
-    bestFeature = -1
-    for i in range(numFeatures):
-        # set the feature in i axis
-        featList = [example[i] for example in dataSet]
-        uniqueVals = set(featList)
-        newEntropy = 0.0
-        for value in uniqueVals:
-            # method binSplitDataSet is in class CART
-            subDataSet = binSplitDataSet(dataSet, i, value)
-            # calculate posterior prob
-            prob = len(subDataSet)/float(len(dataSet))
-            newEntropy += prob*calcShannonEnt(subDataSet)
-        infoGain = bestEntropy - newEntropy
-        if infoGain > bestInfoGain:
-            bestInfoGain = infoGain
-            bestFeature = i
-    return bestFeature
-
-def majorityCnt(classList):
-    classCount = {}
-    for vote in classList:
-        if vote not in classCount.keys():
-            classCount[vote] = 0
-        classCount[vote] += 1
-    sortedClassCount = sorted(classCount.iteritems(),
-                              key=operator.itemgetter(1), reverse=True)
-    return sortedClassCount[0][0]
