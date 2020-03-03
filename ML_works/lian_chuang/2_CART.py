@@ -169,3 +169,58 @@ def getMean(tree):
 
 c = CART(R'lian_chuang\data\titanic.txt')
 c.predict()
+
+
+############ classification tree #############
+
+from math import log
+import operator
+
+def calcShannonEnt(dataSet):
+    numEntries = len(dataSet)
+    labelCounts = {}
+    for featVector in dataSet:
+        currentLabel = featVector[-1]
+        if currentLabel not in labelCounts.keys():
+            labelCounts[currentLabel] = 0
+        labelCounts[currentLabel] += 1
+    shannonEnt = 0.0
+    for key in labelCounts:
+        prob = float(labelCounts[key])/numEntries
+        shannonEnt -= prob*log(prob, 2)
+    return shannonEnt
+
+def chooseBestFeatureToSplit(dataSet):
+    # in this case, the dataSet's last value is the y value
+    # no need to be taken into consideration
+    numFeatures = len(dataSet[0])-1
+    # set original value
+    bestEntropy = calcShannonEnt(dataSet)
+    bestInfoGain = 0.0
+    bestFeature = -1
+    for i in range(numFeatures):
+        # set the feature in i axis
+        featList = [example[i] for example in dataSet]
+        uniqueVals = set(featList)
+        newEntropy = 0.0
+        for value in uniqueVals:
+            # method binSplitDataSet is in class CART
+            subDataSet = binSplitDataSet(dataSet, i, value)
+            # calculate posterior prob
+            prob = len(subDataSet)/float(len(dataSet))
+            newEntropy += prob*calcShannonEnt(subDataSet)
+        infoGain = bestEntropy - newEntropy
+        if infoGain > bestInfoGain:
+            bestInfoGain = infoGain
+            bestFeature = i
+    return bestFeature
+
+def majorityCnt(classList):
+    classCount = {}
+    for vote in classList:
+        if vote not in classCount.keys():
+            classCount[vote] = 0
+        classCount[vote] += 1
+    sortedClassCount = sorted(classCount.iteritems(),
+                              key=operator.itemgetter(1), reverse=True)
+    return sortedClassCount[0][0]
