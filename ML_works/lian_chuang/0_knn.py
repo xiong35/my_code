@@ -3,6 +3,41 @@ import numpy as np
 import operator
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from collections import namedtuple
+
+
+class KdNode:
+    def __init__(self, storePt, splitInd, lChild, rChild):
+        self.storePt = storePt
+        self.splitInd = splitInd
+        self.lChild = lChild
+        self.rChild = rChild
+
+
+class KdTree:
+    def __init__(self, data):
+        k = len(data[0])
+
+        def CreateNode(split, dataSet):
+            if len(dataSet) == 0:
+                return None
+            dataSet.sort(key=lambda x: x[split])
+            splitInd = len(dataSet) // 2
+            midData = dataSet[splitInd]
+            splitNext = (split + 1) % k
+
+            return KdNode(midData, split,
+                          CreateNode(splitNext, dataSet[:splitInd]),
+                          CreateNode(splitNext, dataSet[splitInd + 1:]))
+
+        self.root = CreateNode(0, data)
+
+
+class Result:
+    def __init__(self, nearestPoint, nearestDist, visitedNodes):
+        self.nearestPoint = nearestPoint
+        self.nearestDist = nearestDist
+        self.visitedNodes = visitedNodes
 
 
 class knn:
@@ -13,6 +48,7 @@ class knn:
     labels = None
     k = 7
     predictLabel = None
+    kdTree = None
 
     def __init__(self, filename):
         self.filename = filename
@@ -23,8 +59,8 @@ class knn:
         if not testData:
             testData = self.testFeat
         for data in testData:
-            predictLabel.append(self.findMax(data))
-        self.plot(testData,predictLabel)
+            print(self.findNearest(self.kdTree,data).nearestPoint)
+        # self.plot(testData, predictLabel)
 
     def line2Data(self, line):
         line = line.strip('\n')
@@ -80,22 +116,64 @@ class knn:
 
         self.testFeat -= mean
         self.testFeat /= std
-        return mat, labels
+        return mat.tolist(), labels.tolist()
 
-    # 计算测试样本与所有训练样本的距离
-    def findMax(self, testData):
-        diffMat = self.data-testData
-        sqDiffMat = diffMat ** 2
-        sqDistance = sqDiffMat.sum(axis=1)
-        distances = sqDistance ** 0.5
-        sortedDist = distances.argsort()
-        classCount = {}
-        for i in range(self.k):
-            voteIlable = self.labels[sortedDist[i]]
-            classCount[voteIlable] = classCount.get(voteIlable, 0) + 1
-        sortedClassCount = sorted(classCount.items(),
-                                  key=operator.itemgetter(1), reverse=True)
-        return sortedClassCount[0][0]
+    def train(self):
+        self.kdTree = KdTree(self.data)
+
+    def findNearest(self, tree, point):
+        k = len(point)
+
+        def travel(kdNode, target, maxDist):
+            if kdNode is None:
+                result = Result(np.mat([0] * k), float("inf"), 0)
+                return result
+
+            visitedNodes = 1
+
+            s = kdNode.splitInd
+            curPt = kdNode.storePt
+
+            if target[s] <= curPt[s]:
+                nearerNode = kdNode.lChild
+                furtherNode = kdNode.rChild
+            else:
+                nearerNode = kdNode.rChild
+                furtherNode = kdNode.lChild
+
+            temp1 = travel(nearerNode, target, maxDist)
+
+            nearest = temp1.nearestPoint
+            dist = temp1.nearestDist
+
+            visitedNodes += temp1.visitedNodes
+
+            if dist < maxDist:
+                maxDist = dist
+
+            tempDist = abs(curPt[s] - target[s])
+            if maxDist < tempDist:
+                result = Result(nearest, dist, visitedNodes)
+                return result
+
+            tempDist = np.sqrt(
+                sum((p1 - p2) ** 2 for p1, p2 in zip(curPt, target)))
+
+            if tempDist < dist:
+                nearest = curPt
+                dist = tempDist
+                maxDist = dist
+
+            temp2 = travel(furtherNode, target, maxDist)
+
+            visitedNodes += temp2.visitedNodes
+            if temp2.nearestDist < dist:
+                nearest = temp2.nearestPoint
+                dist = temp2.nearestDist
+            result = Result(nearest, dist, visitedNodes)
+            return result
+
+        return travel(tree.root, point, float("inf"))
 
     def plot(self, testData, predictLabel):
         fig = plt.figure()
@@ -114,4 +192,5 @@ class knn:
 
 
 k = knn('lian_chuang\\data\\iris.data')
+k.train()
 k.predict()
