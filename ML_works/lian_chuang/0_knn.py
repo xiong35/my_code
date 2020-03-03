@@ -3,20 +3,21 @@ import numpy as np
 import operator
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from collections import namedtuple
+np.random.seed(7777)
 
 
 class KdNode:
-    def __init__(self, storePt, splitInd, lChild, rChild):
+    def __init__(self, storePt, splitInd, lChild, rChild, label):
         self.storePt = storePt
         self.splitInd = splitInd
         self.lChild = lChild
         self.rChild = rChild
+        self.label = label
 
 
 class KdTree:
     def __init__(self, data):
-        k = len(data[0])
+        k = len(data[0])-1
 
         def CreateNode(split, dataSet):
             if len(dataSet) == 0:
@@ -28,39 +29,36 @@ class KdTree:
 
             return KdNode(midData, split,
                           CreateNode(splitNext, dataSet[:splitInd]),
-                          CreateNode(splitNext, dataSet[splitInd + 1:]))
+                          CreateNode(splitNext, dataSet[splitInd + 1:]), midData[-1])
 
         self.root = CreateNode(0, data)
 
 
 class Result:
-    def __init__(self, nearestPoint, nearestDist, visitedNodes):
+    def __init__(self, nearestPoint, nearestDist):
         self.nearestPoint = nearestPoint
         self.nearestDist = nearestDist
-        self.visitedNodes = visitedNodes
 
 
 class knn:
     filename = None
-    testFeat = None
-    testLabels = None
+    testMat = None
     data = None
-    labels = None
     k = 7
-    predictLabel = None
     kdTree = None
 
     def __init__(self, filename):
         self.filename = filename
-        self.data, self.labels = self.normalize()
+        self.data = self.normalize()
 
     def predict(self, testData=None):
         predictLabel = []
         if not testData:
-            testData = self.testFeat
+            testData = self.testMat
         for data in testData:
-            print(self.findNearest(self.kdTree,data).nearestPoint)
-        # self.plot(testData, predictLabel)
+            predictLabel.append(self.findNearest(
+                self.kdTree, data).nearestPoint[-1])
+        self.plot(testData, predictLabel)
 
     def line2Data(self, line):
         line = line.strip('\n')
@@ -69,11 +67,11 @@ class knn:
         for feat in line[:-1]:
             curLine.append(float(feat))
         if str(line[-1]) == 'Iris-setosa':
-            curLine.append('r')
+            curLine.append(1)
         elif str(line[-1]) == 'Iris-versicolor':
-            curLine.append('g')
+            curLine.append(2)
         elif str(line[-1]) == 'Iris-virginica':
-            curLine.append('b')
+            curLine.append(3)
         return curLine
     # 处理数据 done
 
@@ -82,41 +80,35 @@ class knn:
             arrayOLines = fr.readlines()[:-1]
             numOflines = len(arrayOLines)
             numOfTestData = int(numOflines*0.15)
-            np.random.seed(7)
             # 随机抽测试数据
             indexOfTest = np.random.randint(0, numOflines, numOfTestData)
-            testFeat = []
-            testLabels = []
+            testMat = []
             # 将测试数据整合成矩阵
             for index in indexOfTest:
                 line = self.line2Data(arrayOLines[index])
-                testFeat.append(line[:-1])
-                testLabels.append(line[-1])
-            self.testFeat = np.array(testFeat)
-            self.testLabels = np.array(testLabels)
-            # 将"训练"数据整合成矩阵
+                testMat.append(line)
+            self.testMat = testMat
             retMat = []
-            retLabels = []
             for index in range(numOflines):
                 if index in indexOfTest:
                     continue
                 line = self.line2Data(arrayOLines[index])
-                retMat.append(line[:-1])
-                retLabels.append(line[-1])
+                retMat.append(line)
             retMat = np.array(retMat)
-            retLabels = np.array(retLabels)
-            return retMat, retLabels
+            return retMat
 
     def normalize(self):
-        mat, labels = self.file2matrix()
-        mean = mat.mean(axis=0)
+        mat = self.file2matrix()
+        mean = mat[:, :-1].mean(axis=0)
+        mean = np.concatenate((mean, np.zeros(1)))
         mat -= mean
-        std = mat.std(axis=0)
+        std = mat[:, :-1].std(axis=0)
+        std = np.concatenate((std, np.ones(1)))
         mat /= std
 
-        self.testFeat -= mean
-        self.testFeat /= std
-        return mat.tolist(), labels.tolist()
+        self.testMat -= mean
+        self.testMat /= std
+        return mat.tolist()
 
     def train(self):
         self.kdTree = KdTree(self.data)
@@ -126,14 +118,11 @@ class knn:
 
         def travel(kdNode, target, maxDist):
             if kdNode is None:
-                result = Result(np.mat([0] * k), float("inf"), 0)
+                result = Result([0] * k, float("inf"))
                 return result
-
-            visitedNodes = 1
 
             s = kdNode.splitInd
             curPt = kdNode.storePt
-
             if target[s] <= curPt[s]:
                 nearerNode = kdNode.lChild
                 furtherNode = kdNode.rChild
@@ -146,14 +135,12 @@ class knn:
             nearest = temp1.nearestPoint
             dist = temp1.nearestDist
 
-            visitedNodes += temp1.visitedNodes
-
             if dist < maxDist:
                 maxDist = dist
 
             tempDist = abs(curPt[s] - target[s])
             if maxDist < tempDist:
-                result = Result(nearest, dist, visitedNodes)
+                result = Result(nearest, dist)
                 return result
 
             tempDist = np.sqrt(
@@ -166,28 +153,30 @@ class knn:
 
             temp2 = travel(furtherNode, target, maxDist)
 
-            visitedNodes += temp2.visitedNodes
             if temp2.nearestDist < dist:
                 nearest = temp2.nearestPoint
                 dist = temp2.nearestDist
-            result = Result(nearest, dist, visitedNodes)
+            result = Result(nearest, dist)
             return result
 
         return travel(tree.root, point, float("inf"))
 
     def plot(self, testData, predictLabel):
+        plotData = np.array(self.data)
+        testData = np.array(testData)
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        featX = self.data[:, 0].tolist()
-        featY = self.data[:, 1].tolist()
-        featZ = self.data[:, 2].tolist()
-        originLabels = list(self.labels)
-        ax.scatter3D(featX, featY, featZ, c=originLabels, alpha=0.25)
-        testFeatX = testData[:, 0].tolist()
-        testFeatY = testData[:, 1].tolist()
-        testFeatZ = testData[:, 2].tolist()
-        ax.scatter3D(testFeatX, testFeatY, testFeatZ,
-                     c=list(predictLabel), marker='+', alpha=1)
+        featX = plotData[:, 0].tolist()
+        featY = plotData[:, 1].tolist()
+        featZ = plotData[:, 2].tolist()
+        originLabels = plotData[:, 3].tolist()
+        ax.scatter3D(featX, featY, featZ, c=originLabels,
+                     alpha=0.2, cmap='cool')
+        testMatX = testData[:, 0].tolist()
+        testMatY = testData[:, 1].tolist()
+        testMatZ = testData[:, 2].tolist()
+        ax.scatter3D(testMatX, testMatY, testMatZ,
+                     c=predictLabel, marker='+', alpha=1, cmap='cool')
         plt.show()
 
 
