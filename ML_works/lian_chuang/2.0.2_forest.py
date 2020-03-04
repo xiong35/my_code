@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
+
 class TreeNode:
     lChild = None
     rChild = None
@@ -148,14 +149,14 @@ class CART:
             pred = []
             acc = 0
             for i in range(len(self.testData)):
-                if predVec[i][0] > 0.24:
+                if predVec[i][0] > 0.5:
                     pred.append(1)
                 else:
-                    pred.append(-1)
+                    pred.append(0)
             forestPred.append(pred)
         voteResult = np.array(forestPred).mean(axis=0)
         for i in range(len(voteResult)):
-            if voteResult[i]*self.testData[i, 0] > 0:
+            if voteResult[i] == self.testData[i, 0]:
                 acc += 1
         acc /= len(self.testData)
         print('acc: ', acc)

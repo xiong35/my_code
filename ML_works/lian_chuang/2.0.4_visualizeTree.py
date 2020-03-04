@@ -50,8 +50,8 @@ def plotTree(myTree, parentPt, nodeTxt):
         plotTree(myTree.lChild, centerPt, '<%.2f' % myTree.spVal)
     else:
         plotTree.xOff = plotTree.xOff + 1.0 / plotTree.totalW
-        plotNode('0' if myTree.lChild < 0.24 else '1', (plotTree.xOff,
-                                                        plotTree.yOff), centerPt, leafNode)
+        plotNode('0' if myTree.lChild < 0.5 else '1', (plotTree.xOff,
+                                                       plotTree.yOff), centerPt, leafNode)
         plotMidText((plotTree.xOff, plotTree.yOff),
                     centerPt, '<%.2f' % myTree.spVal)
 
@@ -59,8 +59,8 @@ def plotTree(myTree, parentPt, nodeTxt):
         plotTree(myTree.rChild, centerPt, '>%.2f' % myTree.spVal)
     else:
         plotTree.xOff = plotTree.xOff + 1.0 / plotTree.totalW
-        plotNode('0' if myTree.rChild < 0.24 else '1', (plotTree.xOff,
-                                                        plotTree.yOff), centerPt, leafNode)
+        plotNode('0' if myTree.rChild < 0.5 else '1', (plotTree.xOff,
+                                                       plotTree.yOff), centerPt, leafNode)
         plotMidText((plotTree.xOff, plotTree.yOff),
                     centerPt, '>%.2f' % myTree.spVal)
     plotTree.yOff = plotTree.yOff + 1.0 / plotTree.totalD
