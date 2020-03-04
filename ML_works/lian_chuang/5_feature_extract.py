@@ -21,7 +21,8 @@ class Extract:
                         regex=True, inplace=True)
 
     def save(self):
-        self.df.to_csv("data.csv", index=False, header=True, na_rep="NULL")
+        self.df.to_csv(R"lian_chuang\data\myTitanic.csv",
+                       index=False, header=True, na_rep="NULL")
 
     def oneHot(self):
         self.df['S'] = np.zeros(self.df.shape[0])
@@ -35,7 +36,11 @@ class Extract:
 
     def normalize(self):
         self.df = self.df[:].astype('float32')
-        self.df = (self.df-self.df.mean())/(self.df.std()) 
+        labels = self.df['Survived']
+        self.df = (self.df-self.df.mean())/(self.df.std())
+        self.df.drop(columns=['Survived'], axis=1, inplace=True)
+        self.df.insert(0, 'Survived', labels)
+        print(self.df)
 
 
 d = Extract(R'lian_chuang\data\titanic.txt')
