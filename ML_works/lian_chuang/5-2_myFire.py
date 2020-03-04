@@ -53,7 +53,7 @@ class CART:
         mat1 = dataSet[np.nonzero(dataSet[:, feature] <= value)[0], :]
         return mat0, mat1
 
-    def createTree(self, dataSet, ops=(1.5, 5)):
+    def createTree(self, dataSet, ops=(5, 25)):
         dataSet = np.mat(dataSet)
         feat, val = self.chooseBestSplit(dataSet, ops)
         if feat == None:
@@ -66,7 +66,7 @@ class CART:
         retTree.rChild = self.createTree(rSet, ops)
         return retTree
 
-    def chooseBestSplit(self, dataSet, ops=(1.5, 5)):
+    def chooseBestSplit(self, dataSet, ops):
         # minimum step of descent
         tolS = ops[0]
         # minimum num of samples to split
@@ -142,9 +142,6 @@ class CART:
         numOfTrees = 5
         forest = []
         for i in range(numOfTrees):
-            # trainData = self.crossVal(i)
-            # pruneData = trainData[:20]
-            # trainData = trainData[20:]
             trainData, pruneData = self.boostStrap()
             tree = self.createTree(trainData)
             tree = self.prune(tree, pruneData)
@@ -152,29 +149,8 @@ class CART:
         forestPred = []
         for i in range(numOfTrees):
             predVec = self.createFore(tree)
-            # following are on Titanic
-            # pred = []
-            # acc = 0
-            # for i in range(len(self.testData)):
-            #     if predVec[i][0] > 0.5:
-            #         pred.append(1)
-            #     else:
-            #         pred.append(0)
-            # forestPred.append(pred)
             forestPred.append(predVec)
         voteResult = np.array(forestPred).mean(axis=0)
-        # following are on Titanic
-        # for i in range(len(voteResult)):
-        #     if voteResult[i] >= 0.5:
-        #         voteResult[i] = 1
-        #     else:
-        #         voteResult[i] = 0
-        # for i in range(len(voteResult)):
-        #     if voteResult[i] == self.testData[i, 0]:
-        #         acc += 1
-        # acc /= len(self.testData)
-        # print('acc: ', acc)
-        # return
         testLabel = self.testData[:, 0]
         return voteResult, testLabel.A
 
@@ -222,6 +198,6 @@ print(predict.shape)
 print(testLabel)
 print(testLabel.shape)
 x = np.linspace(0, len(predict), len(predict))
-plt.scatter(x, predict, c='b', alpha=0.7)
-plt.scatter(x, testLabel, c='r', alpha=0.7)
+plt.plot(x, np.clip(np.exp(testLabel) -
+                    np.exp(predict), -200, 200), c='b', alpha=0.7)
 plt.show()
