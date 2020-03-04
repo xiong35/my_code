@@ -47,7 +47,9 @@ class Extract:
 
     def normalize(self):
         self.df = self.df[:].astype('float32')
-        labels = self.df['area']
+
+        self.df = self.df[~self.df['area'].isin([0])]
+        labels = self.df['area'].apply(lambda x: np.log(x+0.1))
         self.df = (self.df-self.df.mean())/(self.df.std())
         self.df.drop(columns=['area'], axis=1, inplace=True)
         self.df.insert(0, 'area', labels)
