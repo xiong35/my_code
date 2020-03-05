@@ -1,103 +1,111 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import multivariate_normal
+from mpl_toolkits.mplot3d import Axes3D
 
 
-def createOneDataSet(n=200, mean=[0, 0], cov=[[1, 0], [0, 1]]):
-    return np.random.multivariate_normal(mean, cov, n)
+class GMM:
+    def __init__(self, nDim=3, nCluster=7):
+        self.nCluster = nCluster
+
+        dataSet = self.createDataSet(int(nCluster*1.5), nDim)
+        self.trainData, self.testData = self.randSample(dataSet)
+        self.nData, self.nDim = self.trainData.shape
+
+        # init random gaussian distribute
+        self.mu = np.random.randint(self.trainData.min()/2, self.trainData.max() /
+                                    2, size=(nCluster, nDim))
+        self.cov = np.zeros((nCluster, nDim, nDim))
+        for dim in range(len(self.cov)):
+            np.fill_diagonal(self.cov[dim], 1)
+
+        # prob array
+        self.pi = np.ones(nCluster)/nCluster
+        # prob mat
+        self.pMat = np.zeros((self.nData, nCluster))
+
+    def createDataSet(self, k, nDim=3):
+        mean = np.random.randn(nDim)*5
+        cov = np.random.randn(nDim, nDim)
+        n = np.random.randint(200, 500)
+        dataSet = np.random.multivariate_normal(mean, cov, n)
+        for _ in range(k-1):
+            mean = np.random.randn(nDim)*5
+            cov = np.random.randn(nDim, nDim)
+            n = np.random.randint(50, 500)
+            dataSet = np.concatenate(
+                (dataSet, np.random.multivariate_normal(mean, cov, n)), axis=0)
+        return dataSet
+
+    def randSample(self, dataSet):
+        nData = len(dataSet)
+        trainData, testData = [], []
+        testInd = np.random.randint(0, nData, int(nData*0.2))
+        for i in range(nData):
+            if i in testInd:
+                testData.append(dataSet[i])
+            else:
+                trainData.append(dataSet[i])
+        trainData = np.mat(trainData)
+        testData = np.mat(testData)
+        return trainData, testData
+
+    def cal_p_of_x(self, data):
+        Px = np.mat(np.zeros((len(data), self.nCluster)))
+        CONST = np.power((2*np.pi), (self.nDim/2.0))
+        for k in range(self.nCluster):
+            delta = np.power((np.linalg.det(self.cov[k, :, :])), 0.5)
+            frac_1_2piDOTsigma = 1/(CONST * delta)
+            shift = data - self.mu[k, :]
+            sigmaInv = np.linalg.inv(self.cov[k, :, :])
+            epow = -0.5*(np.multiply(shift.dot(sigmaInv), shift))
+            epowsum = np.sum(epow, axis=1)
+            Px[:, k] = frac_1_2piDOTsigma * np.exp(epowsum)
+        return Px.A
+
+    def train(self):
+        max_iter = 30
+        for _ in range(max_iter):
+            # E
+            self.pMat = self.cal_p_of_x(self.trainData)
+
+            # frequence of each dataSample
+            totol_N = self.pMat.sum(axis=1)
+            # if a dataSample's freq == 0, reset to 1/nCluster
+            totol_N[totol_N == 0] = self.nCluster
+            self.pMat /= totol_N.reshape(-1, 1)
+
+            # M
+            for k in range(self.nCluster):
+                N_k = np.sum(self.pMat[:, k], axis=0)
+                self.mu[k] = (1/N_k)*np.sum(np.multiply(self.trainData,
+                                                        self.pMat[:, k].reshape(-1, 1)), axis=0)
+                self.cov[k] = ((1/N_k)*np.dot(np.multiply(self.pMat[:, k].reshape(-1, 1),
+                                                          (self.trainData-self.mu[k])).T,
+                                              (self.trainData-self.mu[k])))
+                self.pi[k] = N_k/self.nData
+
+    def predict(self):
+        predMat = self.cal_p_of_x(self.testData)
+
+        totol_N = predMat.sum(axis=1)
+        totol_N[totol_N == 0] = self.nCluster
+        predMat /= totol_N.reshape(-1, 1)
+        yPred = np.argmax(predMat, axis=1)
+        # 2D
+        # plt.clf()
+        # plt.scatter(self.testData[:, 0],
+        #             self.testData[:, 1], c=yPred, alpha=0.5)
+        # plt.show()
+        # 3D
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter3D(self.testData[:, 0],
+                     self.testData[:, 1],
+                     self.testData[:, 2], c=yPred, alpha=0.5)
+        plt.show()
 
 
-# createDataSet
-def createDataSet(k):
-    mean = [np.random.uniform(-10, 10), np.random.uniform(-10, 10)]
-    cov = np.random.randn(2, 2)
-    n = np.random.randint(200, 500)
-    dataSet = createOneDataSet(n, mean, cov)
-    for _ in range(k-1):
-        mean = [np.random.uniform(-10, 10), np.random.uniform(-10, 10)]
-        cov = np.random.randn(2, 2)
-        n = np.random.randint(50, 500)
-        dataSet = np.concatenate(
-            (dataSet, createOneDataSet(n, mean, cov)), axis=0)
-    return dataSet
-
-
-def randSample(dataSet):
-    numOfData = len(dataSet)
-    trainData, testData = [], []
-    testInd = np.random.randint(0, numOfData, int(numOfData*0.2))
-    for i in range(numOfData):
-        if i in testInd:
-            testData.append(dataSet[i])
-        else:
-            trainData.append(dataSet[i])
-    trainData = np.mat(trainData)
-    testData = np.mat(testData)
-    return trainData, testData
-
-
-n_cluster = 10
-dataSet = createDataSet(n_cluster)
-X_train, X_test = randSample(dataSet)
-n_samples, n_feature = X_train.shape
-
-# 随机初始化均值，维度为(n_cluster, n_feature)
-# 生成范围/2是为了限制初始均值的生成范围
-mu = np.random.randint(X_train.min()/2, X_train.max() /
-                       2, size=(n_cluster, n_feature))
-
-# 一个协方差矩阵的维度为(n_feature,n_feature)
-# 多个分布的协方差矩阵维度为(n_cluster,n_feature,n_feature)
-cov = np.zeros((n_cluster, n_feature, n_feature))
-for dim in range(len(cov)):
-    np.fill_diagonal(cov[dim], 1)
-
-# 初始均匀的类分布概率
-pi = np.ones(n_cluster)/n_cluster
-
-# 概率矩阵
-P_mat = np.zeros((n_samples, n_cluster))
-
-
-max_iter = 30
-for i in range(max_iter):
-    # 对每一组参数进行计算
-    for k in range(n_cluster):
-        # 实时生成高斯分布，免去了存储
-        g = multivariate_normal(mean=mu[k], cov=cov[k])
-
-    # E-step，计算概率
-        # 计算X在各分布下出现的频率
-        P_mat[:, k] = pi[k]*g.pdf(X_train)
-
-    # 计算各样本出现的总频率
-    totol_N = P_mat.sum(axis=1)
-    # 如果某一样本在各类中的出现频率和为0，则使用K来代替，相当于分配等概率
-    totol_N[totol_N == 0] = n_cluster
-    P_mat /= totol_N.reshape(-1, 1)
-
-    # M-step，更新参数
-    for k in range(n_cluster):
-        N_k = np.sum(P_mat[:, k], axis=0)    # 类出现的频率
-        mu[k] = (1/N_k)*np.sum(np.multiply(X_train, P_mat[:, k].reshape(-1, 1)),
-                               axis=0)    # 该类的新均值
-        cov[k] = ((1/N_k)*np.dot(np.multiply(P_mat[:, k].reshape(-1, 1), (X_train-mu[k])).T,
-                                 (X_train-mu[k])))
-        pi[k] = N_k/n_samples
-
-
-# 迭代更新好参数之后，开始预测未知数据的类
-pred_mat = np.zeros((X_test.shape[0], n_cluster))
-for k in range(n_cluster):
-    g = multivariate_normal(mean=mu[k], cov=cov[k])
-    pred_mat[:, k] = pi[k]*g.pdf(X_test)
-
-totol_N = pred_mat.sum(axis=1)
-totol_N[totol_N == 0] = n_cluster
-pred_mat /= totol_N.reshape(-1, 1)
-Y_pred = np.argmax(pred_mat, axis=1)
-plt.clf()
-plt.scatter(X_test[:, 0].T.tolist()[0],
-            X_test[:, 1].T.tolist()[0], c=Y_pred, alpha=0.5)
-plt.show()
+g = GMM()
+g.train()
+g.predict()
