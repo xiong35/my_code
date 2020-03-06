@@ -139,6 +139,6 @@ class CART:
         acc /= len(self.testData)
         print('acc: ', acc)
 
-
+# 这里用的是做过特征工程的数据
 c = CART(R'lian_chuang\data\myTitanic.csv')
 c.predict()

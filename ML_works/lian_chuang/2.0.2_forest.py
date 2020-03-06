@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-
 class TreeNode:
     lChild = None
     rChild = None
@@ -114,7 +113,7 @@ class CART:
     def boostStrap(self):
         randSet = set()
         trainData = []
-        for _ in range(int(len(self.dataSet)*1.5)):
+        for _ in range(int(len(self.dataSet))):
             rand = np.random.randint(0, len(self.dataSet))
             randSet.add(rand)
             trainData.append(self.dataSet.tolist()[rand])
@@ -132,8 +131,7 @@ class CART:
         testData = self.dataSet[i*numPerFold:(i+1)*numPerFold]
         return testData
 
-    def predict(self):
-        numOfTrees = 5
+    def train(self,numOfTrees=30):
         forest = []
         for i in range(numOfTrees):
             # trainData = self.crossVal(i)
@@ -142,10 +140,15 @@ class CART:
             trainData, pruneData = self.boostStrap()
             tree = self.createTree(trainData)
             tree = self.prune(tree, pruneData)
+            print('tree%d is done'%(i+1))
             forest.append(tree)
+        return forest
+
+    def predict(self,forest):
+        numOfTrees = len(forest)
         forestPred = []
         for i in range(numOfTrees):
-            predVec = self.createFore(tree)
+            predVec = self.createFore(forest[i])
             pred = []
             acc = 0
             for i in range(len(self.testData)):
@@ -156,7 +159,7 @@ class CART:
             forestPred.append(pred)
         voteResult = np.array(forestPred).mean(axis=0)
         for i in range(len(voteResult)):
-            if voteResult[i] == self.testData[i, 0]:
+            if (voteResult[i]-0.5) * (self.testData[i, 0]-0.5) > 0:
                 acc += 1
         acc /= len(self.testData)
         print('acc: ', acc)
@@ -192,6 +195,7 @@ class CART:
             tree.lChild = self.getMean(tree.lChild)
         return (tree.lChild+tree.rChild)/2.0
 
-
+# 这里用的是做过特征工程的数据
 c = CART(R'lian_chuang\data\myTitanic.csv')
-c.predict()
+forest = c.train(50)
+c.predict(forest)

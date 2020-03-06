@@ -17,6 +17,8 @@ class knn:
     def __init__(self, filename):
         self.filename = filename
         self.data, self.labels = self.normalize()
+    
+    def predict(self):
         retLabels = []
         for testData in self.testFeat:
             retLabels.append(self.findMax(testData))
@@ -110,4 +112,6 @@ class knn:
         plt.show()
 
 
-k = knn('lian_chuang\\data\\iris.data')
+filename = 'lian_chuang\\data\\iris.data'
+k = knn(filename)
+k.predict()

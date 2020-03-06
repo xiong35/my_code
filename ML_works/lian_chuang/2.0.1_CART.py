@@ -169,10 +169,6 @@ def getMean(tree):
     return (tree.lChild+tree.rChild)/2.0
 
 
-c = CART(R'lian_chuang\data\titanic.txt')
-c.predict()
-
-
 ##############################################
 ############ classification tree #############
 ##############################################
@@ -227,3 +223,7 @@ def majorityCnt(classList):
     sortedClassCount = sorted(classCount.iteritems(),
                               key=operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
+
+
+c = CART(R'lian_chuang\data\titanic.txt')
+c.predict()
