@@ -188,7 +188,7 @@ class NaiveBayes:
         F1 = 2/(1/precision+1/recall)
 
         print('acc: ', acc)
-        print('precisio: ', precision)
+        print('precision: ', precision)
         print('recall: ', recall)
         print('F1: ', F1)
 

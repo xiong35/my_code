@@ -19,7 +19,6 @@ class knn:
         self.data, self.labels = self.normalize()
         retLabels = []
         for testData in self.testFeat:
-            print('doing')
             retLabels.append(self.findMax(testData))
         self.predictLabel = retLabels
         self.plot()
@@ -45,18 +44,18 @@ class knn:
             numOflines = len(arrayOLines)
             numOfTestData = int(numOflines*0.1)
             np.random.seed(7)
-            # 随机抽测试数据
+
             indexOfTest = np.random.randint(0, numOflines, numOfTestData)
             testFeat = []
             testLabels = []
-            # 将测试数据整合成矩阵
+
             for index in indexOfTest:
                 line = self.line2Data(arrayOLines[index])
                 testFeat.append(line[:-1])
                 testLabels.append(line[-1])
             self.testFeat = np.array(testFeat)
             self.testLabels = np.array(testLabels)
-            # 将"训练"数据整合成矩阵
+
             retMat = []
             retLabels = []
             for index in range(numOflines):
@@ -80,9 +79,7 @@ class knn:
         self.testFeat /= std
         return mat, labels
 
-    # 计算测试样本与所有训练样本的距离
     def findMax(self, testData):
-        # def classify(inX, dataSet, labels, k):
         diffMat = self.data-testData
         sqdiffMat = diffMat ** 2
         sqDistance = sqdiffMat.sum(axis=1)
@@ -109,7 +106,7 @@ class knn:
         testFeatZ = self.testFeat[:, 2].tolist()
         predictLabel = list(self.predictLabel)
         ax.scatter3D(testFeatX, testFeatY, testFeatZ,
-                     c=predictLabel,marker='+',alpha=1)
+                     c=predictLabel, marker='+', alpha=1)
         plt.show()
 
 

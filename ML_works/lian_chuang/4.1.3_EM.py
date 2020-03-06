@@ -68,13 +68,11 @@ class GMM:
         for _ in range(max_iter):
             # E
             self.pMat = self.cal_p_of_x(self.trainData)
-
             # frequence of each dataSample
             totol_N = self.pMat.sum(axis=1)
             # if a dataSample's freq == 0, reset to 1/nCluster
             totol_N[totol_N == 0] = self.nCluster
             self.pMat /= totol_N.reshape(-1, 1)
-
             # M
             for k in range(self.nCluster):
                 N_k = np.sum(self.pMat[:, k], axis=0)
