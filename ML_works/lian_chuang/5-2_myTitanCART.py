@@ -38,8 +38,9 @@ class CART:
     def __init__(self, filename):
         df = pd.read_csv(filename, header=0, sep=",", dtype=float)
         self.dataSet = np.mat(df)
-        self.testData = self.dataSet[:150]
-        self.dataSet = self.dataSet[150:]
+        self.testData = self.dataSet[100:200]
+        self.pruneData = self.dataSet[:100]
+        self.dataSet = self.dataSet[200:]
 
     def binSplitDataSet(self, dataSet, feature, value):
         mat0 = dataSet[np.nonzero(dataSet[:, feature] > value)[0], :]
@@ -112,7 +113,7 @@ class CART:
 
     def predict(self):
         tree = self.createTree(self.dataSet)
-        tree = self.prune(tree, self.testData)
+        tree = self.prune(tree, self.pruneData)
         self.Tree = tree
         predVec = self.createFore(tree)
         pred = []
@@ -127,23 +128,23 @@ class CART:
         acc /= len(self.testData)
         print('acc: ', acc)
 
-    def prune(self, tree, testData):
-        if np.shape(testData)[0] == 0:
+    def prune(self, tree, pruneData):
+        if np.shape(pruneData)[0] == 0:
             return self.getMean(tree)
         if isTree(tree.lChild) or isTree(tree.rChild):
-            lSet, rSet = self.binSplitDataSet(testData,
+            lSet, rSet = self.binSplitDataSet(pruneData,
                                               tree.spInd, tree.spVal)
         if isTree(tree.lChild):
             tree.lChild = self.prune(tree.lChild, lSet)
         if isTree(tree.rChild):
             tree.rChild = self.prune(tree.rChild, rSet)
         if (not isTree(tree.lChild)) and (not isTree(tree.rChild)):
-            lSet, rSet = self.binSplitDataSet(testData,
+            lSet, rSet = self.binSplitDataSet(pruneData,
                                               tree.spInd, tree.spVal)
             errorNoMerge = sum(np.power(lSet[:, 0]-tree.lChild, 2)) +\
                 sum(np.power(rSet[:, 0]-tree.rChild, 2))
             treeMean = (tree.lChild+tree.rChild)/2
-            errorMerge = sum(np.power(testData[:, 0]-treeMean, 2))
+            errorMerge = sum(np.power(pruneData[:, 0]-treeMean, 2))
             if errorNoMerge > errorMerge:
                 print("merge")
                 return treeMean
@@ -162,3 +163,5 @@ class CART:
 
 c = CART(R'lian_chuang\data\myTitanic.csv')
 c.predict()
+
+

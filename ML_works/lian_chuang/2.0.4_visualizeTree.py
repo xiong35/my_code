@@ -1,9 +1,6 @@
-import imp
-with open('lian_chuang\\5-2_myTitanCART.py', 'rb') as fp:
-    models_admin = imp.load_module(
-        'models_admin', fp, 'models.admin.py',
-        ('.py', 'rb', imp.PY_SOURCE)
-    )
+
+
+
 
 decisionNode = dict(boxstyle='round', fc='0.8')
 leafNode = dict(boxstyle='round4', fc='0.8')
@@ -27,13 +24,13 @@ def getTreeDepth(myTree):
 def plotNode(nodeTxt, centerPt, parentPt, nodeType):
     plt.annotate(nodeTxt, xy=parentPt, xycoords='axes fraction',
                  xytext=centerPt, textcoords='axes fraction',
-                 va='center', ha='center', size=6, bbox=nodeType, arrowprops=arrow_args)
+                 va='center', ha='center', size=10, bbox=nodeType, arrowprops=arrow_args)
 
 
 def plotMidText(centerPt, parentPt, txtString):
     xMid = (parentPt[0] - centerPt[0]) / 2.0 + centerPt[0]
     yMid = (parentPt[1] - centerPt[1]) / 2.0 + centerPt[1]
-    plt.text(xMid, yMid, txtString, size=6,)
+    plt.text(xMid, yMid, txtString, size=10,)
 
 
 def plotTree(myTree, parentPt, nodeTxt):
