@@ -4,8 +4,12 @@ import re
 import datetime as dt
 import pymysql
 from urllib import request
-from os import mkdir
+from os import mkdir,listdir
 from shutil import make_archive
+import numpy as np
+from PIL import Image
+from io import StringIO,BytesIO
+import matplotlib.pyplot as plt
 
 CQ_dir = R'C:\Users\xiong35\Desktop\酷Q Air\data\image\ '[:-1]
 save_dir = R'C:\Users\xiong35\Desktop\images\ '[:-1]
@@ -380,6 +384,7 @@ class HomeworkSys:
         return "准备接受你的作业, 请发一张作业照片给我, 如果5分钟内没收到照片我就不会等了哦"
 
     def reset_not_yet(self):
+        # TODO set teacher
         sql_msg = """SELECT `id`, `last_change`,`qq_id`
                      FROM `members` 
                      WHERE `state`="time_wait";"""
@@ -425,11 +430,11 @@ class HomeworkSys:
             return respons
 
         if msg[0] == '[':
-            sql_msg = 'SELECT `state` FROM `members` WHERE `qq_id`="{}";'.format(
+            sql_msg = 'SELECT `state`,`group_name` FROM `members` WHERE `qq_id`="{}";'.format(
                 operator_qq)
             cursor.execute(sql_msg)
             return_msg = cursor.fetchall()
-            if return_msg[0][0] == 'time_wait':
+            if return_msg[0][1] == 'user' and return_msg[0][0] == 'time_wait':
                 sql_msg = 'SELECT `name` FROM `members` WHERE `qq_id`="{}";'.format(
                     operator_qq)
                 cursor.execute(sql_msg)
@@ -444,6 +449,27 @@ class HomeworkSys:
                 CQfile = msg[15:-1]+'.cqimg'
                 filename = homework_dir + st_name + '.jpg'
                 return self.get_img(CQfile, filename, operator_qq)
+            if return_msg[0][1] == 'admin' and return_msg[0][0] == 'time_wait':
+                sql_msg = """SELECT `id` FROM homework
+                            WHERE `class`= "{}"
+                            ORDER BY `id` DESC;""".format(class_num)
+                cursor.execute(sql_msg)
+                homework_id = str(cursor.fetchall()[0][0])
+                class_dir = class_num+'_'+homework_id
+                homework_dir = save_dir+class_dir+R'\ '[:-1]
+                CQfile = msg[15:-1]+'.cqimg'
+                filename = homework_dir + 'answer' + '.jpg'
+                self.get_img(CQfile, filename, operator_qq)
+                fp = open(filename, 'rb')
+                img = fp.read()
+                sql = "INSERT INTO "+class_dir+" (`image`,`name`) VALUES  (%s"+',"admin"'+")"
+                cursor.execute(sql, img)
+                conn.commit()
+                sql_msg = """UPDATE `members` SET `state`="test" 
+                            WHERE `class`="{}"AND group_name="admin";""".format(class_num)
+                cursor.execute(sql_msg)
+                conn.commit()
+
             return None
 
         if self.operator_group == 'user':
@@ -454,19 +480,21 @@ class HomeworkSys:
             return '已经提醒同学们抓紧时间写作业了√'
 
         handout_pat = re.search(
-            r">发作业[:： \n]?\s*内容[:： \n]?(.+)\s*[Dd]{2}[lL][:： \n]?(.+)",
+            r"(>布置作业|>>>布置考试)[:： \n]?\s*内容[:： \n]?(.+)\s*[Dd]{2}[lL][:： \n]?(.+)",
             msg, re.S)
         if handout_pat:
-            class_num = groupSystem.check_groupNclass(operator_qq)[1]
-            content = handout_pat.group(1)
-            ddl = handout_pat.group(2)
+            content = handout_pat.group(2)
+            ddl = handout_pat.group(3)
             ddl = preprocess(ddl)
             time = parse_time(ddl)
             if time.__class__ == str:
                 return time
             time = time.strftime('%Y-%m-%d %H:%M:%S')
-            return self.handout(class_num, content, time)
-
+            return_msg = self.handout(class_num, content, time)
+            #return (return_msg,homework_id)
+            if handout_pat.group(1) == '>>>布置考试':
+                self.start_test(class_num,return_msg[1])
+            return return_msg[0]
         return '我不太懂你说的呢，试试输入">README"查看操作手册吧😉'
 
     def handout(self, class_num, content, ddl):
@@ -488,8 +516,9 @@ class HomeworkSys:
         cursor.execute(sql_msg)
         conn.commit()
         self.hurry(class_num, 0)
-        return '成功给{}的学生布置了作业, 并提醒了他们在{}前完成\n作业编号为{}'.format(
+        return_msg = '成功给{}的学生布置了作业, 并提醒了他们在{}前完成\n作业编号为{}'.format(
             class_num, ddl, homework_id)
+        return (return_msg,homework_id)
 
     def zip_homework(self, class_num):
         sql_msg = """SELECT `id` FROM homework 
@@ -500,8 +529,8 @@ class HomeworkSys:
         base_dir = save_dir+class_num+'_'+str(homework_id)
         zip_dir = ftp_dir+class_num+'_'+str(homework_id)
         make_archive(zip_dir, 'zip', base_dir)
-        sql_msg = """SELECT `qq_id` FROM members
-                     WHERE `group_name`=`admin`
+        sql_msg = """SELECT `qq_id` FROM `members`
+                     WHERE `group_name`='admin'
                      AND `class` = "{}";""".format(class_num)
         cursor.execute(sql_msg)
         qq_id = cursor.fetchall()[0][0]
@@ -520,7 +549,8 @@ class HomeworkSys:
             sql_msg = """ SELECT `content`,`ddl`
                           FROM `homework`
                           WHERE class="{}"
-                          AND flag<2;""".format(class_num)
+                          AND flag<2
+                          ORDER BY `id` DESC;""".format(class_num)
             cursor.execute(sql_msg)
             homework_msg = cursor.fetchall()
             if not homework_msg:
@@ -577,19 +607,30 @@ class HomeworkSys:
             ddl = item[2]
             id_num = item[0]
             if NOW > ddl:
-                sql_msg = "UPDATE `homework` SET flag=2 WHERE `id`={};".format(
-                    id_num)
-                cursor.execute(sql_msg)
-                conn.commit()
                 sql_msg = """SELECT `qq_id` FROM `members` 
                              WHERE `class`= "{}" 
-                             AND `group_name`<>"user";""".format(class_num)
+                             AND `group_name`="admin";""".format(class_num)
                 cursor.execute(sql_msg)
                 admin_qq = cursor.fetchall()[0][0]
                 st_list = self.hurry(class_num, 2)
-                self.zip_homework(class_num)
-                self.mainHandler.api.send_private_msg(admin_qq, st_list)
-                return st_list
+                sql_msg = """SELECT `id` FROM `{}_{}`;""".format(class_num,id_num)
+                try:
+                    cursor.execute(sql_msg)
+                except:
+                    self.zip_homework(class_num)
+                    self.mainHandler.api.send_private_msg(admin_qq, st_list)
+                    sql_msg = "UPDATE `homework` SET flag=2 WHERE `id`={};".format(
+                        id_num)
+                    # FIXME cant update flag to 2
+                    cursor.execute(sql_msg)
+                    conn.commit()
+                    return st_list
+                class_dir = class_num+'_'+str(id_num)
+                path = save_dir+class_dir
+                fileList = listdir(path)
+                testSys = TestSys()
+                testSys.start_test(path+R'\answer.jpg')
+                # TODO check if there is an exam
             if ddl-NOW < ONEHOUR and item[3] == 0:
                 sql_msg = "UPDATE `homework` SET flag=1 WHERE `id`={};".format(
                     id_num)
@@ -610,6 +651,71 @@ class HomeworkSys:
         cursor.execute(sql_msg)
         conn.commit()
         return '成功上传作业！'
+
+    def start_test(self,class_num,homework_id):
+        sql_msg = """CREATE TABLE `{}_{}`(
+                         `id`INT UNSIGNED AUTO_INCREMENT,
+                         `name` VARCHAR(10),
+                         `score` FLOAT DEFAULT 0,
+                         `image` MEDIUMBLOB,
+                         PRIMARY KEY (`id`)
+                     )ENGINE=InnoDB DEFAULT CHARSET=utf8;""".format(class_num,homework_id)
+        cursor.execute(sql_msg)
+        conn.commit()
+        sql_msg = """UPDATE `members` SET `state`="time_wait" 
+                     WHERE `class`="{}"AND group_name="admin";""".format(class_num)
+        cursor.execute(sql_msg)
+        conn.commit()
+
+
+class TestSys:
+    tar_y = 24
+    tar_x = None
+    box = None
+    answer = None
+
+    def start_test(self, img_path, num_of_question=12):
+        img = Image.open(img_path)
+        scale = img.size[1]/self.tar_y
+        self.tar_x = img.size[0]/scale
+        self.box = (0, 0, self.tar_x*1.07, self.tar_y*1.07)
+        img.thumbnail((self.tar_x, self.tar_y))
+        img = img.crop(self.box)
+        self.answer = np.array(img).mean(axis=2)
+        self.num_of_question = num_of_question
+
+    def revise(self, img_path):
+        img = Image.open(img_path)
+        img.thumbnail((self.tar_x, self.tar_y))
+        img = img.crop(self.box)
+        img = np.array(img).mean(axis=2)
+        diff = self.answer - img
+        diff = (abs(diff) > 85).astype('float32')
+        return diff
+
+    def check_acc(self, diff):
+        checked = set()
+        wrong = 0
+        for row in range(int(self.tar_y*1.07)):
+            for column in range(int(self.tar_x*1.07)):
+                flag = 0
+                for i in range(5):
+                    if column+i in checked:
+                        flag = 1
+                        break
+                if flag:
+                    continue
+                diff_pix = 0
+                for i in range(5):
+                    try:
+                        diff_pix += diff[row, column+i]
+                    except IndexError:
+                        diff_pix += 0
+                if diff_pix >= 4:
+                    wrong += 1
+                    for i in range(5):
+                        checked.add(column+i)
+        return 1 - (wrong/self.num_of_question)
 
 
 def call_reminder(mainHandler):
@@ -651,19 +757,20 @@ def preprocess(msg):
                    '六': '6', '五': '5', '四': '4',
                    '三': '3', '二': '2', '一': '1',
                    '提醒我': '', '提醒': '',
-                   '星期': '周', '周日': '周7'}
+                   '星期': '周', '周日': '周7','半':'30分'}
     for key, value in change_dict.items():
         msg = msg.replace(key, value)
     return msg
 
 
-parsable = r"([\d\- \.个小时分钟后今月号明之天下周早上下晚午点:：]+)"
+parsable = r"([\d\- \.个小时分钟后今月号之明中天周早上下晚午点:：]+)"
 
 
 def parse_time(msg):
     default_ap = 0
     default_hour = 8
     default_min = 0
+    date = TODAY
     fmt_pat = re.search(r"\d+\-\d+ \d+[:：]\d+", msg)
     if fmt_pat:
         try:
@@ -706,11 +813,11 @@ def parse_time(msg):
             month_day = 1
         date = '{}-{}-{}'.format(NOW.year, month, month_day)
         date = dt.datetime.strptime(date, '%Y-%m-%d')
-    if not weekday and not day and not exact_date:
-        return '你好像没说在哪一天提醒你呢'
-    am_pm = re.search(r"(早上?|上午|下午|晚上?)", msg)
+    am_pm = re.search(r"(早上?|上午|下午|晚上?|中午)", msg)
     if am_pm:
-        ap_dict = {'早': 0, '上': 0, '下': 12, '晚': 12}
+        if am_pm.group(1) == "中午":
+            default_hour = 0
+        ap_dict = {'早': 0, '上': 0, '下': 12, '晚': 12, '中': 12}
         default_ap = ap_dict[am_pm.group(1)[0]]
     time = re.search(r"(\d+)[点时:：](\d*)分?", msg)
     if time:
