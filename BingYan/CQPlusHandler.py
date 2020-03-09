@@ -4,11 +4,13 @@ import re
 import datetime as dt
 import pymysql
 from urllib import request
-from os import mkdir,listdir
+from os import mkdir, listdir
 from shutil import make_archive
 import numpy as np
 from PIL import Image
-from io import StringIO,BytesIO
+from io import StringIO, BytesIO
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 CQ_dir = R'C:\Users\xiong35\Desktop\酷Q Air\data\image\ '[:-1]
@@ -27,36 +29,77 @@ ONEHOUR = dt.timedelta(hours=1)
 
 # TODO other feature's description
 README = """
-##使用指南_(:з」∠)_##
-[+] 指示接下来进行备忘之类的操作
-[#] 指示接下来进行管理组别之类的操作
-详情可输入
-+REAMDME 和 #README
-来查看"""
+## 快速开始
 
-plusReadMe = """
+输入"+明早八点半提醒我背单词"试试!
+想了解更多?输入READMEALL试试!
+也可以访问网站http://101.133.217.104/coolq获取详情
+还可以输入"#README", "+README", ">README"来逐一查看😉
+如果使用过程中出了任何意料之外的状况，谨记：这不是bug，而是feature🌚
+"""
+
+plusReadme = """
+### 备忘录系统
+
+加前缀[+], 支持形如"4-1 23:33"这样精确的时间描述, 也支持自然语言
+例子:
+
++过30分钟提醒我吃饭
++下周一选课
++明天晚上9点看球
++查看所有
++提前2小时, 每10分钟提醒我一次, 编号7
++删除7
+
+基本可以处理任何**正常**的描述😜
 """
 
 
-hashReanME = """
-# 设置3224609972为[管理员,用户]
-# 删除xxx
-# 注册xxx
-# xxx是什么身份
-# 查看所有
+hashReadme = """
+### 登记注册
+
+**只有老师有权限使用这些功能**
+加前缀[#], 注册登记需要找老师/作者, 申请成为老师需要找作者🌚
+
+#注册[姓名], [这里写QQ号], [这里写班级]
+#注册张三, 12345678, cs1901
+#查看[这里写班级]
+#删除[这里写QQ号]
+#设置[这里写QQ号]为管理员
+#删除[这里写QQ号]
+#[这里写QQ号]是什么身份
 """
 
+ltReadme="""
+### 作业系统
 
+加前缀[>], 后三条指令只有老师可以使用哦😶
+
+>交作业
+>查看作业/>查看所有作业
+>布置作业 内容: 微积分第2节, ddl: 明天晚上8点
+>>>布置考试 内容: 大物第3章, ddl: 明天晚上8点
+>提醒同学
+
+ddl的设定支持形如"4-1 23:33"这样精确的时间描述, 也支持自然语言
+"""
+
+# 用户输入README查看操作列表
 class ReadMe:
     def respondRM(self, request):
         if request == "README":
             return README
-        if request == "+README":
-            return plusReadMe
-        if request == "#README":
-            return hashReanME
+        elif request == "+README":
+            return plusReadme
+        elif request == "#README":
+            return hashReadme
+        elif request == ">README":
+            return ltReadme
+        elif request == "READMEALL":
+            return README+plusReadme+hashReadme+ltReadme
 
 
+# 用一个对象存储备忘录的相关信息
 class ReminderInfo:
     def __init__(self, from_id=None, from_type='private', ddl=None,
                  content='干活', begin_time=None, interval=None):
@@ -68,12 +111,14 @@ class ReminderInfo:
         self.interval = interval
 
 
+# 处理备忘录事件
 class HandleReminder:
     def __init__(self, msg=None):
         self.msg = msg
+
+
     # check whether to remind
     # return fetch tuple,'ddl'|'begin' / None,None
-
     def check_remind(self):
         sql_msg = """SELECT
                      `id`, `from_id`, `from_type`, `ddl`,
@@ -115,11 +160,10 @@ class HandleReminder:
         cursor.execute(msg)
         conn.commit()
         return '成功设置在{}提醒你{} ฅ( ̳• ◡ • ̳)ฅ'.format(RI.ddl, RI.content)
-        # self.logging.debug(return_msg)
+
 
     # detect time key words in self.msg
     # return True/False
-
     def is_reminder_event(self):
         key_words = ['天', '星期', '周', '秒', '分钟', '时',
                      '月', '点', '早', '晚', '.', '号', ':', '：']
@@ -157,6 +201,7 @@ class HandleReminder:
         if not self.is_reminder_event():
             return "我看不懂你输入的指令呢, 能换个说法重新输一遍么QwQ"
         RI = ReminderInfo(qq_id, from_type)
+        # 找到可以解析出时间信息的部分+提醒的内容
         pattern = re.search(parsable+r'(.*)', msg)
         if pattern:
             to_parse = pattern.group(1)
@@ -168,7 +213,10 @@ class HandleReminder:
         else:
             return "我看不懂你输入的指令呢, 能换个说法重新输一遍么QwQ"
         RI.ddl = time.strftime('%Y-%m-%d %H:%M:%S')
-        RI.content = content
+        try:
+            RI.content = content
+        except UnboundLocalError:
+            return "你倒是说你要干啥啊/托腮"
         RI.begin_time = (time-FIVEMIN*2).strftime('%Y-%m-%d %H:%M:%S')
         RI.interval = 7
         return self.set_reminder(RI)
@@ -207,6 +255,8 @@ class HandleReminder:
         return "成功删除编号为{}的备忘_(:з」∠)_".format(idnum)
 
 
+# 记录成员相关信息的类
+# state: 提交作业的状态: 'done'/'not_yet'/'time_wait'/(只有老师有的状态:'test')
 class MemberInfo:
     def __init__(self, name, qq_id, classNum,
                  group_name='user', state='not_yet', last_change=None, path=''):
@@ -223,8 +273,7 @@ class MemberInfo:
         self.path = path
 
 
-# done
-#! all input qq id need to be valid
+# 处理成员信息
 class GroupSys:
 
     def __init__(self, msg, operator_qq):
@@ -269,10 +318,10 @@ class GroupSys:
             return self.show_all_user(tar_class)
         return "我不太清楚你的意思呢，试试输入#README查看操作指南?"
 
+
     # check a qq id's group
     # input: qq id to be checked
     # output: group str / err msg
-
     def check_groupNclass(self, qq_id):
         sql_msg = """SELECT `group_name`,`class`
                      FROM `members`
@@ -356,12 +405,16 @@ class GroupSys:
         return "数据库里没有这个班的数据呢(°ー°〃)"
 
 
+# 处理作业的事务(包括布置考试)
 class HomeworkSys:
     operator_group = 'user'
 
     def __init__(self, mainHandler):
         self.mainHandler = mainHandler
 
+
+    # 当同学发了'>交作业'后设置状态为'time_wait'
+    # 在这种状态下才会接受发来的图片
     def ready_for_handin(self, qq_id):
         sql_msg = """SELECT `flag` 
                      FROM homework
@@ -372,9 +425,9 @@ class HomeworkSys:
         cursor.execute(sql_msg)
         return_msg = cursor.fetchall()
         if not return_msg:
-            return "现在没有要交的作业呢💁‍♂️"
+            return "现在没有要交的作业呢💁‍"
         if return_msg[0][0] == 2:
-            return "现在没有要交的作业呢💁‍♂️"
+            return "现在没有要交的作业呢💁‍"
         now = NOW.strftime('%Y-%m-%d %H:%M:%S')
         sql_msg = """UPDATE `members`
                      SET `state` = "time_wait",last_change = "{}"
@@ -383,11 +436,14 @@ class HomeworkSys:
         conn.commit()
         return "准备接受你的作业, 请发一张作业照片给我, 如果5分钟内没收到照片我就不会等了哦"
 
+
+    # 如果过了5分钟没收到作业就重新设置状态为'not_yet'
     def reset_not_yet(self):
         # TODO set teacher
         sql_msg = """SELECT `id`, `last_change`,`qq_id`
                      FROM `members` 
-                     WHERE `state`="time_wait";"""
+                     WHERE `state`="time_wait"
+                     AND group_name="user";"""
         cursor.execute(sql_msg)
         return_msg = cursor.fetchall()
         if return_msg:
@@ -462,7 +518,8 @@ class HomeworkSys:
                 self.get_img(CQfile, filename, operator_qq)
                 fp = open(filename, 'rb')
                 img = fp.read()
-                sql = "INSERT INTO "+class_dir+" (`image`,`name`) VALUES  (%s"+',"admin"'+")"
+                sql = "INSERT INTO "+class_dir + \
+                    " (`image`,`name`) VALUES  (%s"+',"admin"'+")"
                 cursor.execute(sql, img)
                 conn.commit()
                 sql_msg = """UPDATE `members` SET `state`="test" 
@@ -491,12 +548,14 @@ class HomeworkSys:
                 return time
             time = time.strftime('%Y-%m-%d %H:%M:%S')
             return_msg = self.handout(class_num, content, time)
-            #return (return_msg,homework_id)
+            # return (return_msg,homework_id)
             if handout_pat.group(1) == '>>>布置考试':
-                self.start_test(class_num,return_msg[1])
+                self.start_test(class_num, return_msg[1],operator_qq)
             return return_msg[0]
         return '我不太懂你说的呢，试试输入">README"查看操作手册吧😉'
 
+
+    # 发作业
     def handout(self, class_num, content, ddl):
         sql_msg = """INSERT INTO `homework`
                      (`class`, `content`, `ddl`,`flag`)
@@ -518,8 +577,10 @@ class HomeworkSys:
         self.hurry(class_num, 0)
         return_msg = '成功给{}的学生布置了作业, 并提醒了他们在{}前完成\n作业编号为{}'.format(
             class_num, ddl, homework_id)
-        return (return_msg,homework_id)
+        return (return_msg, homework_id)
 
+
+    # 到了ddl后将作业打包
     def zip_homework(self, class_num):
         sql_msg = """SELECT `id` FROM homework 
                      WHERE `class`= "{}"
@@ -535,8 +596,10 @@ class HomeworkSys:
         cursor.execute(sql_msg)
         qq_id = cursor.fetchall()[0][0]
         self.mainHandler.api.send_private_msg(
-            qq_id, "{}班的第{}次作业已经上传到FTP服务器, 请批阅!")
+            int(qq_id), "{}班的第{}次作业已经上传到FTP服务器, 请批阅!".format(class_num, homework_id))
 
+
+    #在布置作业/ddl到了/ddl前1h/老师提醒时提醒所有未交作业的同学
     def hurry(self, class_num, flag):
         sql_msg = """SELECT `qq_id`, `name`
                      FROM `members`
@@ -575,6 +638,8 @@ class HomeworkSys:
         else:
             return "所有学生都交过作业了!"
 
+
+    # 查询所有/未到期 的作业
     def get_all_homework(self, class_num, flag):
         sql_msg = """SELECT `id`,`content`, `ddl`, `flag`
                      FROM `homework` 
@@ -585,8 +650,10 @@ class HomeworkSys:
         if return_msg:
             return return_msg
         else:
-            return "现在没有任何作业呢💁‍♂️"
+            return "现在没有任何作业呢💁‍"
 
+
+    # 检查所有没交作业的同学
     def check_st_not_handin(self, class_num):
         sql_msg = """SELECT `name` FROM `members`
                      WHERE `class`="{}" AND `state`="not_yet" 
@@ -598,6 +665,7 @@ class HomeworkSys:
         else:
             return "所有学生都按时提交作业了!"
 
+    # 每一帧调用: 检查作业是否到ddl
     def check_due_hw(self, class_num):
         return_msg = self.get_all_homework(class_num, 1)
         # `id`,`content`, `ddl`, `flag`
@@ -613,24 +681,48 @@ class HomeworkSys:
                 cursor.execute(sql_msg)
                 admin_qq = cursor.fetchall()[0][0]
                 st_list = self.hurry(class_num, 2)
-                sql_msg = """SELECT `id` FROM `{}_{}`;""".format(class_num,id_num)
-                try:
-                    cursor.execute(sql_msg)
-                except:
+                sql_msg = """SELECT `id` FROM members WHERE `class`= "{}" 
+                             AND `state`="test" ;""".format(class_num)
+                cursor.execute(sql_msg)
+                return_msg = cursor.fetchall()
+                if not return_msg:
                     self.zip_homework(class_num)
-                    self.mainHandler.api.send_private_msg(admin_qq, st_list)
-                    sql_msg = "UPDATE `homework` SET flag=2 WHERE `id`={};".format(
-                        id_num)
-                    # FIXME cant update flag to 2
-                    cursor.execute(sql_msg)
-                    conn.commit()
+                    self.mainHandler.api.send_private_msg(
+                        int(admin_qq), st_list)
                     return st_list
+                sql_msg = "UPDATE `homework` SET flag=2 WHERE `id`={};".format(
+                    id_num)
+                cursor.execute(sql_msg)
+                conn.commit()
                 class_dir = class_num+'_'+str(id_num)
                 path = save_dir+class_dir
-                fileList = listdir(path)
+                file_list = listdir(path)
                 testSys = TestSys()
                 testSys.start_test(path+R'\answer.jpg')
-                # TODO check if there is an exam
+                for sql_id, img_path in enumerate(file_list):
+                    st_name = img_path[:-4]
+                    img_path = path+R'\ '[:-1]+img_path
+                    diff = testSys.revise(img_path)
+                    acc = testSys.check_acc(diff)
+                    fp = open(img_path, 'rb')
+                    img = fp.read()
+                    sql_msg = "INSERT INTO `"+class_dir+"` (`image`) VALUES (%s)"
+                    cursor.execute(sql_msg, img)
+                    sql_msg = """UPDATE `{}_{}` 
+                                 SET `name`="{}", `score`={}
+                                 WHERE `id`={};""".format(class_num, id_num,
+                                                          st_name, acc, sql_id+2)
+                    cursor.execute(sql_msg)
+                    conn.commit()
+                scores = testSys.scores
+                plt.hist(scores,bins = 12) 
+                plt.ylabel('num')
+                plt.xlabel('acc')
+                plt.savefig(path+R'\overview.png')
+                self.zip_homework(class_num)
+                self.mainHandler.api.send_private_msg(
+                    int(admin_qq), st_list)
+
             if ddl-NOW < ONEHOUR and item[3] == 0:
                 sql_msg = "UPDATE `homework` SET flag=1 WHERE `id`={};".format(
                     id_num)
@@ -638,6 +730,7 @@ class HomeworkSys:
                 conn.commit()
                 return self.hurry(class_num, 1)
 
+    # 将学生发来的图片解析下载
     def get_img(self, CQ_name, filename, operator_qq):
         CQfile = CQ_dir+CQ_name
         with open(CQfile) as fr:
@@ -652,28 +745,33 @@ class HomeworkSys:
         conn.commit()
         return '成功上传作业！'
 
-    def start_test(self,class_num,homework_id):
+    # 布置考试: 新建数据库等事宜
+    def start_test(self, class_num, homework_id, operator_qq):
         sql_msg = """CREATE TABLE `{}_{}`(
                          `id`INT UNSIGNED AUTO_INCREMENT,
                          `name` VARCHAR(10),
                          `score` FLOAT DEFAULT 0,
                          `image` MEDIUMBLOB,
                          PRIMARY KEY (`id`)
-                     )ENGINE=InnoDB DEFAULT CHARSET=utf8;""".format(class_num,homework_id)
+                     )ENGINE=InnoDB DEFAULT CHARSET=utf8;""".format(class_num, homework_id)
         cursor.execute(sql_msg)
         conn.commit()
         sql_msg = """UPDATE `members` SET `state`="time_wait" 
                      WHERE `class`="{}"AND group_name="admin";""".format(class_num)
         cursor.execute(sql_msg)
         conn.commit()
+        self.mainHandler.api.send_private_msg(int(operator_qq),'请发送一张标准答案的答题卡给我')
 
 
+# 批改答题卡的程序
 class TestSys:
     tar_y = 24
     tar_x = None
     box = None
     answer = None
+    scores = []
 
+    # 得到标准答案
     def start_test(self, img_path, num_of_question=12):
         img = Image.open(img_path)
         scale = img.size[1]/self.tar_y
@@ -693,6 +791,7 @@ class TestSys:
         diff = (abs(diff) > 85).astype('float32')
         return diff
 
+    # 根据答案检查学生的准确率
     def check_acc(self, diff):
         checked = set()
         wrong = 0
@@ -715,9 +814,12 @@ class TestSys:
                     wrong += 1
                     for i in range(5):
                         checked.add(column+i)
-        return 1 - (wrong/self.num_of_question)
+        acc = 1 - (wrong/self.num_of_question)
+        self.scores.append(acc)
+        return acc
 
 
+# 每一帧调用: 检查到期的备忘
 def call_reminder(mainHandler):
     handelReminder = HandleReminder()
     item, hit_ddl = handelReminder.check_remind()
@@ -741,6 +843,7 @@ def call_reminder(mainHandler):
             mainHandler.api.send_group_msg(qq_id, return_msg)
 
 
+# 每一帧调用: 检查到期的作业
 def call_homework(mainHandler):
     homeworkSystem = HomeworkSys(mainHandler)
     sql_msg = """SELECT DISTINCT `class` FROM `members`;"""
@@ -751,21 +854,23 @@ def call_homework(mainHandler):
     homeworkSystem.reset_not_yet()
 
 
+# 对时间描述语段进行预处理
 def preprocess(msg):
     change_dict = {'十一': '11', '十二': '12', '十': '10',
                    '九': '9', '八': '8', '七': '7',
                    '六': '6', '五': '5', '四': '4',
                    '三': '3', '二': '2', '一': '1',
-                   '提醒我': '', '提醒': '',
-                   '星期': '周', '周日': '周7','半':'30分'}
+                   '提醒我': '', '提醒': '', '两': '2',
+                   '星期': '周', '周日': '周7' ,'半': '30分'}
     for key, value in change_dict.items():
         msg = msg.replace(key, value)
     return msg
 
 
-parsable = r"([\d\- \.个小时分钟后今月号之明中天周早上下晚午点:：]+)"
+# 可解析的语句成分
+parsable = r"([\d\- \.个过小时分钟后半今月号之明中天周早晚点:：(?:上午)(?:下午)(?:中午)]+)"
 
-
+# 解析时间描述
 def parse_time(msg):
     default_ap = 0
     default_hour = 8
@@ -780,15 +885,17 @@ def parse_time(msg):
             return time
         except:
             pass
-    after = re.search(r"(\d+)(个?小时|分|天)钟?之?后?", msg)
+    # 不能解析"xx小时xx分后"
+    after = re.search(r"(过?)(\d+)(个?小时|分|天)钟?之?(后?)", msg)
     if after:
-        if after.group(2)[-1] == '时':
-            delta_time = dt.timedelta(hours=int(after.group(1)))
-        elif after.group(2) == '分':
-            delta_time = dt.timedelta(minutes=int(after.group(1)))
-        elif after.group(2) == '天':
-            delta_time = dt.timedelta(days=int(after.group(1)))
-        return NOW + delta_time
+        if after.group(1) or after.group(4):
+            if after.group(3)[-1] == '时':
+                delta_time = dt.timedelta(hours=int(after.group(2)))
+            elif after.group(3) == '分':
+                delta_time = dt.timedelta(minutes=int(after.group(2)))
+            elif after.group(3) == '天':
+                delta_time = dt.timedelta(days=int(after.group(2)))
+            return NOW + delta_time
     day = re.search(r"(今天?|明天?|后天)", msg)
     if day:
         day_dict = {"今": 0, "明": 1, "后": 2}
@@ -836,7 +943,6 @@ def parse_time(msg):
 class MainHandler(cqplus.CQPlusHandler):
 
     def handle_event(self, event, params):
-        # self.logging.debug("hello world")
         if event == 'on_timer':
             call_reminder(self)
             call_homework(self)
@@ -848,7 +954,11 @@ class MainHandler(cqplus.CQPlusHandler):
                 return_msg = homeworkSystem.parse(msg, qq_id)
                 if return_msg.__class__ == str:
                     self.api.send_private_msg(qq_id, return_msg)
-            if msg[0] == '+':
+            elif 'README' in msg:
+                readme = ReadMe()
+                return_msg = readme.respondRM(msg)
+                self.api.send_private_msg(qq_id, return_msg)
+            elif msg[0] == '+':
                 handelReminder = HandleReminder(msg)
                 return_msg = handelReminder.parse(qq_id, 'private')
                 if return_msg.__class__ == str:
@@ -875,13 +985,22 @@ class MainHandler(cqplus.CQPlusHandler):
                 homeworkSystem = HomeworkSys(self)
                 return_msg = homeworkSystem.parse(msg, qq_id)
                 self.api.send_private_msg(qq_id, return_msg)
+            else:
+                old = msg
+                replace_dic = {"你":'你才','?':'','吗':'啊','？':'!'}
+                for key, value in replace_dic.items():
+                    msg = msg.replace(key, value)
+                if old == msg:
+                    self.api.send_private_msg(qq_id, msg+'?')
+                else:
+                    self.api.send_private_msg(qq_id, msg)
 
         if event == 'on_group_msg':
             msg = params['msg']
             qq_id = params['from_group']
             if '傻逼' in msg:
                 self.api.send_group_msg(qq_id, '草, 你他妈说话文明点啊')
-            if msg == '。。。':
+            if msg == '。。。' or msg=='...' or msg == '，，，':
                 self.api.send_group_msg(qq_id, '垃圾玩意只会发点点点？🙃')
             if msg[0] == '+':
                 handelReminder = HandleReminder(msg)
