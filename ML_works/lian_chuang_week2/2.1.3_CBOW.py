@@ -9,9 +9,9 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 tf.reset_default_graph()
 
-filename = R'C:\Users\xiong35\Desktop\transcripts.csv'
+filename = R'C:\Users\xiong35\Desktop\t_asv.csv'
 df = pd.read_csv(filename, header=0, sep=",", dtype=str)
-description = df['transcript']
+description = df['t']
 
 
 def bulid_dic(sentences):
@@ -22,7 +22,7 @@ def bulid_dic(sentences):
     for d in sentences:
         d = d.replace(',', '')
         d = d.replace('.', '')
-        d = d.split(' ')
+        d = d.split(' ')[1:]
         num_sentence += 1
         for w in d:
             if w not in words:
@@ -126,9 +126,9 @@ if __name__ == '__main__':
               workers=num_worker,
               use_multiprocessing=True
               )
-    print(pd.Series(most_similar(word2id, 'important')))
-    print(pd.Series(most_similar(word2id, 'life')))
-    print(pd.Series(most_similar(word2id, 'enough')))
+    print(pd.Series(most_similar(word2id, 'father')))
+    print(pd.Series(most_similar(word2id, 'glory')))
+    print(pd.Series(most_similar(word2id, 'heaven')))
 
     model.save_weights('model_weights.h5')
     plot_model(model, to_file='./word2vec.png',
