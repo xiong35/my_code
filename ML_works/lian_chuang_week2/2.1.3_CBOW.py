@@ -10,9 +10,17 @@ tf.disable_v2_behavior()
 tf.reset_default_graph()
 
 
+word_size = 30  
+window = 4 
+num_negative = 15 
+min_count = 2  
+num_epoch = 1 
+subsample_t = 5e-5  
+num_sentence_per_batch = 16
+fname = R'C:\Users\xiong35\Desktop\corpus\Holmose.txt'
 
 
-def preprocess( fname):
+def preprocess(fname):
     f = open(fname, 'r')
     lines = f.readlines()
     sentences = []
@@ -22,9 +30,12 @@ def preprocess( fname):
         data.append(line.strip())
         line = line.replace(',', '')
         line = line.replace('.', '')
-        line = line.replace('-', '')
+        line = line.replace('-', ' ')
         line = line.replace('?', '')
-        line = line.replace('"', '')
+        line = line.replace('”', '')
+        line = line.replace('“', '')
+        line = line.replace('!', '')
+        line = line.lower()
         line = line.strip()
         sts = line.split(' ')
         splits = []
@@ -35,11 +46,13 @@ def preprocess( fname):
     f.close()
     return data, sentences
 
+
 def get_stopwords():
     stopwords = []
     stopwords = [line.strip() for line in open(
         R'C:\Users\xiong35\Desktop\corpus\stopped_word.txt').readlines()]
     return stopwords
+
 
 def bulid_dic(sentences):
     words = {}
@@ -53,8 +66,6 @@ def bulid_dic(sentences):
                 words[w] = 0
             words[w] += 1
             total += 1
-        if num_sentence % 100 == 0:
-            print(u'已经找到%s个句子' % num_sentence)
 
     words = {i: j for i, j in words.items() if j >= min_count}
     id2word = {i+1: j for i, j in enumerate(words)}
@@ -70,26 +81,35 @@ def bulid_dic(sentences):
     return num_sentence, id2word, word2id, num_word, subsamples
 
 
-def data_generator(word2id, subsamples, data):
-    x, y = [], []
-    sentence_num = 0
-    for d in data:
-        d = [0]*window + [word2id[w] for w in d if w in word2id] + [0]*window
-        r = np.random.random(len(d))
-        for i in range(window, len(d)-window):
-            if d[i] in subsamples and r[i] > subsamples[d[i]]:
-                continue
-            x.append(d[i-window:i]+d[i+1:i+1+window])
-            y.append([d[i]])
-        sentence_num += 1
-        if sentence_num == num_sentence_per_batch:
-            x, y = np.array(x), np.array(y)
-            z = np.zeros((len(x), 1))
-            return [x, y], z
+def data_generator():
+    while True:
+        x, y = [], []
+        sentence_num = 0
+        for d in data:
+            d = [0]*window + [word2id[w]
+                              for w in d if w in word2id] + [0]*window
+            r = np.random.random(len(d))
+            has_result = False
+            for i in range(window, len(d)-window):
+                if d[i] in subsamples and r[i] > subsamples[d[i]]:
+                    continue
+                temp = d[i-window:i]+d[i+1:i+1+window]
+                if len(temp) != window * 2:
+                    continue
+                has_result = True
+                x.append(temp)
+                y.append([d[i]])
+            if has_result:
+                sentence_num += 1
+            if sentence_num == num_sentence_per_batch:
+                x, y = np.array(x), np.array(y)
+                z = np.zeros((len(x), 1))
+                yield [x, y], z
+                x, y = [], []
+                sentence_num = 0
 
 
 def build_w2vm(word_size, window, num_word, num_negative):
-    # CBOW输入
     input_words = Input(shape=(window*2,), dtype='int32')
     input_vecs = Embedding(num_word, word_size, name='word2vec')(input_words)
     input_vecs_sum = Lambda(lambda x: K.sum(x, axis=1))(input_vecs)
@@ -106,59 +126,44 @@ def build_w2vm(word_size, window, num_word, num_negative):
                             (K.batch_dot(x[0], K.expand_dims(x[1], 2))+x[2])[:, :, 0])
                         )([softmax_weights, input_vecs_sum, softmax_biases])
 
-    # 留意到，我们构造抽样时，把目标放在了第一位，也就是说，softmax的目标id总是0，这可以从data_generator中的z变量的写法可以看出
-
     model = Model(inputs=[input_words, target_word], outputs=my_softmax)
     model.compile(loss='sparse_categorical_crossentropy',
                   optimizer='adam', metrics=['accuracy'])
-    # 请留意用的是sparse_categorical_crossentropy而不是categorical_crossentropy
     model.summary()
     return model
 
 
 def most_similar(word2id, w, k=10):
-    # model = load_model('./word2vec.h5')  # 载入模型 在数据集较大的时候用空间换时间
-    # weights = model.get_weights()#可以顺便看看每层的权重
     embeddings = model.get_weights()[0]
     normalized_embeddings = embeddings / \
-        (embeddings**2).sum(axis=1).reshape((-1, 1))**0.5  # 词向量归一化，即将模定为1
+        (embeddings**2).sum(axis=1).reshape((-1, 1))**0.5
     v = normalized_embeddings[word2id[w]]
     sims = np.dot(normalized_embeddings, v)
     sort = sims.argsort()[::-1]
     sort = sort[sort > 0]
     return [(id2word[i], sims[i]) for i in sort[:k]]
 
+
 def predict():
     while True:
         word = input("enter a word: ")
         if word == 'q':
             break
-        print(pd.Series(most_similar(word2id, word)))
+        if word in word2id:
+            print(pd.Series(most_similar(word2id, word)))
+        else:
+            print('not in')
 
+data, sentences = preprocess(fname)  
+num_sentence, id2word, word2id, num_word, subsamples = bulid_dic(
+    sentences)  
+model = build_w2vm(word_size, window, num_word, num_negative)  
+model.fit_generator(data_generator(),
+                    steps_per_epoch=int(
+                        num_sentence/num_sentence_per_batch),
+                    epochs=num_epoch,)
+# model.load_weights('model_weights.h5')
 
-if __name__ == '__main__':
-    word_size = 60  # 词向量维度
-    window = 5  # 窗口大小
-    num_negative = 15  # 随机负采样的样本数
-    min_count = 2  # 频数少于min_count的词将会被抛弃
-    num_worker = 4  # 读取数据的并发数
-    num_epoch = 2  # 迭代次数，由于使用了adam，迭代次数1～2次效果就相当不错
-    subsample_t = 1e-5  # 词频大于subsample_t的词语，会被降采样，这是提高速度和词向量质量的有效方案
-    num_sentence_per_batch = 20
-    fname = R'C:\Users\xiong35\Desktop\corpus\Holmose.txt'
+predict()
+model.save('model.h5')
 
-    data,sentences = preprocess(fname) #读原始数据
-    num_sentence, id2word, word2id, num_word, subsamples = bulid_dic(
-        sentences)  # 建字典
-    ipt, opt = data_generator(word2id, subsamples, data)  # 构造训练数据
-    model = build_w2vm(word_size, window, num_word, num_negative)  # 搭模型
-    model.fit(ipt, opt,
-              steps_per_epoch=int(num_sentence/num_sentence_per_batch),
-              epochs=num_epoch,
-              workers=num_worker,
-              use_multiprocessing=True
-              )
-
-    model.save_weights('model_weights.h5')
-    plot_model(model, to_file='./word2vec.png',
-               show_shapes=True, dpi=300)  # 输出框架图
