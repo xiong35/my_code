@@ -9,10 +9,37 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 tf.reset_default_graph()
 
-filename = R'C:\Users\xiong35\Desktop\t_asv.csv'
-df = pd.read_csv(filename, header=0, sep=",", dtype=str)
-description = df['t']
 
+
+
+def preprocess( fname):
+    f = open(fname, 'r')
+    lines = f.readlines()
+    sentences = []
+    data = []
+    stopwords = get_stopwords()
+    for line in lines:
+        data.append(line.strip())
+        line = line.replace(',', '')
+        line = line.replace('.', '')
+        line = line.replace('-', '')
+        line = line.replace('?', '')
+        line = line.replace('"', '')
+        line = line.strip()
+        sts = line.split(' ')
+        splits = []
+        for w in sts:
+            if w not in stopwords:
+                splits.append(w)
+        sentences.append(splits)
+    f.close()
+    return data, sentences
+
+def get_stopwords():
+    stopwords = []
+    stopwords = [line.strip() for line in open(
+        R'C:\Users\xiong35\Desktop\corpus\stopped_word.txt').readlines()]
+    return stopwords
 
 def bulid_dic(sentences):
     words = {}
@@ -20,9 +47,6 @@ def bulid_dic(sentences):
     total = 0.
 
     for d in sentences:
-        d = d.replace(',', '')
-        d = d.replace('.', '')
-        d = d.split(' ')[1:]
         num_sentence += 1
         for w in d:
             if w not in words:
@@ -104,21 +128,29 @@ def most_similar(word2id, w, k=10):
     sort = sort[sort > 0]
     return [(id2word[i], sims[i]) for i in sort[:k]]
 
+def predict():
+    while True:
+        word = input("enter a word: ")
+        if word == 'q':
+            break
+        print(pd.Series(most_similar(word2id, word)))
+
 
 if __name__ == '__main__':
     word_size = 60  # 词向量维度
     window = 5  # 窗口大小
     num_negative = 15  # 随机负采样的样本数
-    min_count = 0  # 频数少于min_count的词将会被抛弃
+    min_count = 2  # 频数少于min_count的词将会被抛弃
     num_worker = 4  # 读取数据的并发数
     num_epoch = 2  # 迭代次数，由于使用了adam，迭代次数1～2次效果就相当不错
     subsample_t = 1e-5  # 词频大于subsample_t的词语，会被降采样，这是提高速度和词向量质量的有效方案
     num_sentence_per_batch = 20
+    fname = R'C:\Users\xiong35\Desktop\corpus\Holmose.txt'
 
-    # data,sentences = getdata(fname) #读原始数据
+    data,sentences = preprocess(fname) #读原始数据
     num_sentence, id2word, word2id, num_word, subsamples = bulid_dic(
-        description)  # 建字典
-    ipt, opt = data_generator(word2id, subsamples, description)  # 构造训练数据
+        sentences)  # 建字典
+    ipt, opt = data_generator(word2id, subsamples, data)  # 构造训练数据
     model = build_w2vm(word_size, window, num_word, num_negative)  # 搭模型
     model.fit(ipt, opt,
               steps_per_epoch=int(num_sentence/num_sentence_per_batch),
@@ -126,9 +158,6 @@ if __name__ == '__main__':
               workers=num_worker,
               use_multiprocessing=True
               )
-    print(pd.Series(most_similar(word2id, 'father')))
-    print(pd.Series(most_similar(word2id, 'glory')))
-    print(pd.Series(most_similar(word2id, 'heaven')))
 
     model.save_weights('model_weights.h5')
     plot_model(model, to_file='./word2vec.png',
