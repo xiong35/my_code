@@ -156,7 +156,7 @@ def predict():
 
 data, sentences = preprocess(fname)  
 num_sentence, id2word, word2id, num_word, subsamples = bulid_dic(
-    sentences)  
+    sentences)  # FIXME: change to new_h.txt
 model = build_w2vm(word_size, window, num_word, num_negative)  
 model.fit_generator(data_generator(),
                     steps_per_epoch=int(
