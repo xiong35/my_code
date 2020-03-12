@@ -25,7 +25,7 @@ class Agent:
     def __init__(self):
         self.alpha = 0.25
         self.gamma = 0.99
-        self.epsilon = 0.1
+        self.epsilon = 0.9
         self.position = [0, 0]
         self.q_table = np.zeros((5, 5, 4))  # 5*5 map / 4 direcrions
 
@@ -49,13 +49,11 @@ class Agent:
             while self.position not in [[1, 3], [3, 2], [3, 4], [4, 0]]:
                 count += 1
                 [x, y] = self.position
-                if (np.random.uniform(0, 1) > self.epsilon) or\
-                        (self.q_table[x, y, :] == 0).all():
+                q_vals = self.q_table[x, y, :]
+                if (np.random.uniform(0, 1) < self.epsilon) or (q_vals == 0).all():
                     movement = np.random.randint(0, 4)
                 else:
-                    q_vals = self.q_table[x, y, :]
                     movement = int(np.where(q_vals == q_vals.max())[0][0])
-                    print(self.position, movement)
 
                 [x_next, y_next] = self.move(movement)
                 next_q = self.q_table[x_next, y_next, :].max()
@@ -66,7 +64,8 @@ class Agent:
                     my_map.plot((x_next, y_next), 0.15)
                 else:
                     my_map.plot((x_next, y_next))
-                self.epsilon += 0.0005
+                if self.epsilon > 0.01:
+                    self.epsilon *= 0.999
             self.position = [0, 0]
 
 
