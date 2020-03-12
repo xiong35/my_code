@@ -2,6 +2,7 @@
 import keras.backend as K
 from keras.optimizers import Adam
 from keras.models import Model
+from keras.callbacks import ModelCheckpoint
 from keras.layers import Input, Embedding, Dot, Reshape, Add
 import numpy as np
 import pandas as pd
@@ -17,12 +18,12 @@ def get_co_occur():
     filename = R'C:\Users\xiong35\Desktop\co_occur.csv'
     if os.path.exists(filename):
         print('reading')
-        co_occur = pd.read_csv(filename, dtype=int, index_col=0)
+        co_occur = pd.read_csv(filename, dtype=int)
         co_occur = co_occur.values
     else:
         co_occur = np.zeros((num_of_words, num_of_words))
 
-        window = 12
+        window = 15
         corpus = R'C:\Users\xiong35\Desktop\corpus\new_h.txt'
         with open(corpus) as fr:
             lines = fr.readlines()
@@ -43,8 +44,8 @@ def get_co_occur():
                     co_occur[context_id, central_id] += 1
             print('%d is done!' % j)
 
-        co_occur = pd.DataFrame(co_occur)
-        co_occur.to_csv(R'C:\Users\xiong35\Desktop\co_occur.csv', index=False)
+        save_co = pd.DataFrame(co_occur)
+        save_co.to_csv(R'C:\Users\xiong35\Desktop\co_occur.csv', index=False)
     return co_occur
 
 
@@ -86,7 +87,7 @@ def glove_model(vocab_size=num_of_words, vector_dim=64):
     prediction = Add()([dot_product, bias_target, bias_context])
 
     model = Model(inputs=[input_target, input_context], outputs=prediction)
-    model.compile(loss=my_loss, optimizer=Adam(lr=0.01))
+    model.compile(loss=my_loss, optimizer=Adam(lr=0.005))
 
     model.summary()
     return model
@@ -102,12 +103,11 @@ def gen_data():
         centrals = []
         contexts = []
         outputs = []
-        to_train = np.random.randint(0, num_of_words, int(num_of_words*0.01))
-        central_id = to_train[0]
-        for context_id in to_train[1:]:
-            centrals.append(central_id)
-            contexts.append(context_id)
-            out = co_occur[central_id, context_id]
+        for i in range(400):
+            to_train = np.random.randint(0, num_of_words, 2)
+            centrals.append(to_train[0])
+            contexts.append(to_train[1])
+            out = co_occur[to_train[0], to_train[1]]
             outputs.append(out)
         yield [np.array(centrals), np.array(contexts)], np.array(outputs)
 
@@ -135,9 +135,14 @@ def predict():
 
 
 model = glove_model()
+callbacks = [
+    ModelCheckpoint('my_glove_w.h5', monitor='loss', save_best_only=True,
+                    verbose=1, save_weights_only=True),
+]
 history = model.fit_generator(gen_data(),
-                              steps_per_epoch=500,
-                              epochs=40,)
+                              steps_per_epoch=100,
+                              epochs=30, callbacks=callbacks)
+print('\a')
 try:
     loss = history.history['loss']
     epochs = range(1, len(loss)+1)
@@ -146,5 +151,4 @@ try:
 except:
     pass
 
-model.save_weights('my_glove_w.h5')
 predict()

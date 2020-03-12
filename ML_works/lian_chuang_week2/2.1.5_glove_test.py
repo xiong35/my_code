@@ -11,13 +11,6 @@ word2id = pd.read_csv(R'C:\Users\xiong35\Desktop\word2id.csv')
 id2word = pd.read_csv(R'C:\Users\xiong35\Desktop\id2word.csv')
 num_of_words = word2id.shape[1]
 
-model = glove_model()
-model.load_weights('my_glove_w.h5')
-
-embeddings = model.get_weights()[0]+model.get_weights()[1]
-normalized_embeddings = embeddings / \
-    (embeddings**2).sum(axis=1).reshape((-1, 1))**0.5
-
 
 def glove_model(vocab_size=num_of_words, vector_dim=64):
 
@@ -55,8 +48,16 @@ def glove_model(vocab_size=num_of_words, vector_dim=64):
 
 
 def my_loss(y_true, y_pred):
-    return K.sum(K.pow(K.clip(y_true / X_MAX, 0.0, 1.0), a) *
+    return K.sum(K.pow(K.clip(y_true / 100, 0.0, 1.0), 3/4) *
                  K.square(y_pred - K.log(y_true+1e-6)), axis=-1)
+
+
+model = glove_model()
+model.load_weights('my_glove_w.h5')
+
+embeddings = model.get_weights()[0]+model.get_weights()[1]
+normalized_embeddings = embeddings / \
+    (embeddings**2).sum(axis=1).reshape((-1, 1))**0.5
 
 
 def most_similar(word, k=10):
@@ -71,9 +72,9 @@ def calculate(word_list):
     v0_id = word2id[word_list[0]]
     v1_id = word2id[word_list[1]]
     v2_id = word2id[word_list[2]]
-    v0 = embeddings[v0_id]
-    v1 = embeddings[v1_id]
-    v2 = embeddings[v2_id]
+    v0 = embeddings[int(v0_id)]
+    v1 = embeddings[int(v1_id)]
+    v2 = embeddings[int(v2_id)]
     v_pred = v0 - v1 + v2
     sims = np.dot(normalized_embeddings, v_pred)
     sort = sims.argsort()[::-1]
@@ -99,7 +100,7 @@ def predict():
                 print(word, ' not in')
                 wrong = True
         if not wrong:
-            print(pd.Series(calculate(word)))
+            print(pd.Series(calculate(input_words)))
 
 
 predict()

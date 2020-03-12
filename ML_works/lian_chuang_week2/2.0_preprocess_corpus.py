@@ -15,13 +15,13 @@ def preprocess(fname, new_file):
     lines = f.readlines()
     new_f = open(new_file, 'a')
     stopwords = get_stopwords()
-    to_replace = [',', '.', '-', '_', '?', '!',
+    to_replace = [',', '.', '-', '_', '?', '!', ':',
                   '”', '“', '’', '‘', '[', ']', '–', ';']
     for i, line in enumerate(lines):
         if i % 10 == 0:
             print('{} is done'.format(i))
             new_f.write('\n')
-        line = line.strip('\n').lower()
+        line = line.strip('\n').lower()+' '
         for word in stopwords:
             if word in line:
                 line = line.replace(word, ' ')
@@ -42,7 +42,7 @@ if not os.path.exists(new_file):
 
 
 corpus = R'C:\Users\xiong35\Desktop\corpus\new_h.txt'
-min_count = 7
+min_count = 9
 
 
 with open(corpus) as fr:
