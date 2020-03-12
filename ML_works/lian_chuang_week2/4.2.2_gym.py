@@ -22,14 +22,13 @@ class DQN:
         if os.path.exists('dqn.h5'):
             self.model.load_weights('dqn.h5')
 
-        # 经验池
         self.memory_buffer = deque(maxlen=2000)
         self.gamma = 0.95
         self.epsilon = 1.0
         self.epsilon_decay = 0.995
         self.epsilon_min = 0.01
 
-        self.env = gym.make('CartPole-v0')
+        self.env = gym.make('CartPole-v1')
 
     def build_model(self):
         inputs = Input(shape=(4,))
@@ -92,26 +91,22 @@ class DQN:
                 x = observation.reshape(-1, 4)
                 action = self.egreedy_action(x)
                 observation, reward, done, _ = self.env.step(action)
-                # 将数据加入到经验池。
                 reward_sum += reward
                 self.remember(x[0], action, reward, observation, done)
 
                 if len(self.memory_buffer) > batch:
-                    # 训练
                     X, y = self.process_batch(batch)
                     loss = self.model.train_on_batch(X, y)
 
                     count += 1
-                    # 减小egreedy的epsilon参数。
                     self.update_epsilon()
 
-                    # 固定次数更新target_model
                     if count != 0 and count % 20 == 0:
                         self.update_target_model()
             if i%5==0:
                 train_reward.append(reward_sum)
                 train_loss.append(loss)
-            print('%%%.2f'%(i/2))
+            print('%%%.2f'%(100*i/episode))
     
         self.model.save_weights('dqn.h5')
         epochs = range(1, len(train_reward)+1)
@@ -130,7 +125,7 @@ class DQN:
         reward_sum = 0
         random_episodes = 0
 
-        while random_episodes < 10:
+        while random_episodes < 8:
             self.env.render()
 
             x = observation.reshape(-1, 4)
@@ -151,7 +146,6 @@ class DQN:
         self.env.close()
 
 
-if __name__ == '__main__':
-    model = DQN()
-    model.train(300, 32)
-    model.play()
+model = DQN()
+model.train(300, 32)
+model.play()

@@ -143,12 +143,11 @@ history = model.fit_generator(gen_data(),
                               steps_per_epoch=100,
                               epochs=30, callbacks=callbacks)
 print('\a')
-try:
-    loss = history.history['loss']
-    epochs = range(1, len(loss)+1)
-    plt.plot(epochs, loss, 'b', label='Training loss')
-    plt.show()
-except:
-    pass
+
+loss = history.history['loss']
+epochs = range(1, len(loss)+1)
+plt.plot(epochs, loss, 'b', label='Training loss')
+plt.show()
+    
 
 predict()
