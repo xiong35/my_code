@@ -2,6 +2,7 @@ import numpy as np
 from keras.layers import Input, Embedding, Lambda
 from keras.models import Model, load_model
 from keras.utils import plot_model
+from keras.optimizers import Adam
 import keras.backend as K
 import pandas as pd
 import os
@@ -10,48 +11,20 @@ tf.disable_v2_behavior()
 tf.reset_default_graph()
 
 
-word_size = 30  
-window = 4 
-num_negative = 15 
-min_count = 2  
-num_epoch = 1 
-subsample_t = 5e-5  
-num_sentence_per_batch = 16
-fname = R'C:\Users\xiong35\Desktop\corpus\Holmose.txt'
+word_size = 30
+window = 4
+num_negative = 15
+min_count = 3
+num_epoch = 13
+subsample_t = 5e-5
+num_sentence_per_batch = 32
+fname = R'C:\Users\xiong35\Desktop\corpus\new_h.txt'
 
 
-def preprocess(fname):
-    f = open(fname, 'r')
-    lines = f.readlines()
-    sentences = []
-    data = []
-    stopwords = get_stopwords()
-    for line in lines:
-        data.append(line.strip())
-        line = line.replace(',', '')
-        line = line.replace('.', '')
-        line = line.replace('-', ' ')
-        line = line.replace('?', '')
-        line = line.replace('”', '')
-        line = line.replace('“', '')
-        line = line.replace('!', '')
-        line = line.lower()
-        line = line.strip()
-        sts = line.split(' ')
-        splits = []
-        for w in sts:
-            if w not in stopwords:
-                splits.append(w)
-        sentences.append(splits)
-    f.close()
-    return data, sentences
-
-
-def get_stopwords():
-    stopwords = []
-    stopwords = [line.strip() for line in open(
-        R'C:\Users\xiong35\Desktop\corpus\stopped_word.txt').readlines()]
-    return stopwords
+def read_data(fname):
+    with open(fname) as fr:
+        lines = fr.readlines()
+    return lines
 
 
 def bulid_dic(sentences):
@@ -61,7 +34,7 @@ def bulid_dic(sentences):
 
     for d in sentences:
         num_sentence += 1
-        for w in d:
+        for w in d.split():
             if w not in words:
                 words[w] = 0
             words[w] += 1
@@ -78,6 +51,7 @@ def bulid_dic(sentences):
                   (subsample_t/j)**0.5 for i, j in subsamples.items()}
     subsamples = {word2id[i]: j for i,
                   j in subsamples.items() if j < 1.}
+    print(word2id)
     return num_sentence, id2word, word2id, num_word, subsamples
 
 
@@ -85,7 +59,8 @@ def data_generator():
     while True:
         x, y = [], []
         sentence_num = 0
-        for d in data:
+        for d in lines:
+            d = d.split()
             d = [0]*window + [word2id[w]
                               for w in d if w in word2id] + [0]*window
             r = np.random.random(len(d))
@@ -110,7 +85,7 @@ def data_generator():
 
 
 def build_w2vm(word_size, window, num_word, num_negative):
-    input_words = Input(shape=(window*2,), dtype='int32')
+    input_words = Input(shape=(window*2,), dtype='int32', name='context_word')
     input_vecs = Embedding(num_word, word_size, name='word2vec')(input_words)
     input_vecs_sum = Lambda(lambda x: K.sum(x, axis=1))(input_vecs)
 
@@ -128,7 +103,7 @@ def build_w2vm(word_size, window, num_word, num_negative):
 
     model = Model(inputs=[input_words, target_word], outputs=my_softmax)
     model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer='adam', metrics=['accuracy'])
+                  optimizer=Adam(learning_rate=0.002), metrics=['accuracy'])
     model.summary()
     return model
 
@@ -153,17 +128,38 @@ def predict():
             print(pd.Series(most_similar(word2id, word)))
         else:
             print('not in')
+    while True:
+        words = input('enter 3 words:\n w0 - w1 +w2: ')
+        words = words.split()
+        not_in = False
+        for word in words:
+            if word not in word2id:
+                print('not in!')
+                not_in = True
+        if not not_in:
+            id_0 = word2id[word[0]]
+            id_1 = word2id[word[1]]
+            id_2 = word2id[word[2]]
+            embeddings = model.get_weights()[0]
+            v0 = embeddings[id_0]
+            v1 = embeddings[id_1]
+            v2 = embeddings[id_2]
+            v_pred = v0 - v1 + v2
+            normalized_embeddings = embeddings / \
+                (embeddings**2).sum(axis=1).reshape((-1, 1))**0.5
+            sims = np.dot(normalized_embeddings, v_pred)
+            sort = sims.argsort()[::-1]
+            sort = sort[sort > 0]
+            print(pd.Series([(id2word[i], sims[i]) for i in sort[:10]]))
 
-data, sentences = preprocess(fname)  
-num_sentence, id2word, word2id, num_word, subsamples = bulid_dic(
-    sentences)  # FIXME: change to new_h.txt
-model = build_w2vm(word_size, window, num_word, num_negative)  
-model.fit_generator(data_generator(),
-                    steps_per_epoch=int(
-                        num_sentence/num_sentence_per_batch),
-                    epochs=num_epoch,)
-# model.load_weights('model_weights.h5')
+lines = read_data(fname)
+num_sentence, id2word, word2id, num_word, subsamples = bulid_dic(lines)
+model = build_w2vm(word_size, window, num_word, num_negative)
+model.load_weights('model_weights.h5')
+# model.fit_generator(data_generator(),
+#                     steps_per_epoch=int(
+#                         num_sentence/num_sentence_per_batch),
+#                     epochs=num_epoch,)
 
+# model.save_weights('model_weights.h5')
 predict()
-model.save('model.h5')
-
