@@ -26,9 +26,9 @@ class DQN:
         self.gamma = 0.95
         self.epsilon = 1.0
         self.epsilon_decay = 0.995
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.02
 
-        self.env = gym.make('CartPole-v1')
+        self.env = gym.make('CartPole-v0')
 
     def build_model(self):
         inputs = Input(shape=(4,))
@@ -55,17 +55,20 @@ class DQN:
 
     def gen_batch(self, batch_size):
         data_sample = random.sample(self.memory_buffer, batch_size)
-        # tate, action, reward, next_state, done
+        # state, action, reward, next_state, done
         states = np.array([data[0] for data in data_sample])
         next_states = np.array([data[3] for data in data_sample])
 
         y = self.model.predict(states)
+        y_hat = self.model.predict(next_states)
         q_vals = self.target_model.predict(next_states)
 
         for i, (_, action, reward, _, done) in enumerate(data_sample):
             target = reward
             if not done:
-                target += self.gamma * np.amax(q_vals[i])
+                # find an i according to training model
+                i_action = np.argmax(y_hat[i])
+                target += self.gamma * q_vals[i][i_action]
             y[i][action] = target
 
         return states, y
