@@ -84,7 +84,7 @@ def data_generator():
                 sentence_num = 0
 
 
-def build_w2vm(word_size, window, num_word, num_negative):
+def build_model(word_size, window, num_word, num_negative):
     input_words = Input(shape=(window*2,), dtype='int32', name='context_word')
     input_vecs = Embedding(num_word, word_size, name='word2vec')(input_words)
     input_vecs_sum = Lambda(lambda x: K.sum(x, axis=1))(input_vecs)
@@ -154,7 +154,7 @@ def predict():
 
 lines = read_data(fname)
 num_sentence, id2word, word2id, num_word, subsamples = bulid_dic(lines)
-model = build_w2vm(word_size, window, num_word, num_negative)
+model = build_model(word_size, window, num_word, num_negative)
 model.load_weights('model_weights.h5')
 # model.fit_generator(data_generator(),
 #                     steps_per_epoch=int(

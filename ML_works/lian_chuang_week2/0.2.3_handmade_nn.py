@@ -38,10 +38,12 @@ class NeuronNet:
         train_label = data_set[:train_num, 2]
         test_data = data_set[train_num:, 0:2]
         test_label = data_set[train_num:, 2]
+        plt.scatter(train_data[:,0],train_data[:,1],c=train_label,alpha=0.6,cmap='winter')
+        plt.show()
 
         return train_data, train_label, test_data, test_label
 
-    def init_layers(self, nn_architecture):
+    def init_layers(self):
         params_values = {}
 
         for index, layer in enumerate(nn_architecture):
@@ -71,7 +73,6 @@ class NeuronNet:
         dZ[Z <= 0] = 0
         return dZ
 
-
     def layer_forward_propagation(self, A_prev, W_curr, b_curr, activation="relu"):
         Z_curr = np.dot(W_curr, A_prev) + b_curr
 
@@ -82,7 +83,7 @@ class NeuronNet:
 
         return activation_func(Z_curr), Z_curr
 
-    def forward_propagation(self, X, params_values, nn_architecture):
+    def forward_propagation(self, X, params_values):
         memory = {}
         A_curr = X
 
@@ -132,7 +133,7 @@ class NeuronNet:
 
         return dA_prev, dW_curr, db_curr
 
-    def backward_propagation(self, Y_hat, Y, memory, params_values, nn_architecture):
+    def backward_propagation(self, Y_hat, Y, memory, params_values):
         grads_values = {}
         Y = Y.reshape(Y_hat.shape)
 
@@ -157,7 +158,7 @@ class NeuronNet:
 
         return grads_values
 
-    def update(self, params_values, grads_values, nn_architecture, learning_rate):
+    def update(self, params_values, grads_values, learning_rate):
         for layer_index in range(1, len(nn_architecture)+1):
             params_values["W" + str(layer_index)] -= learning_rate * \
                 grads_values["dW" + str(layer_index)]
@@ -166,24 +167,23 @@ class NeuronNet:
 
         return params_values
 
-    def train(self, X, Y, nn_architecture=nn_architecture, epochs=10, learning_rate=1e-2):
-        params_values = self.init_layers(nn_architecture)
+    def train(self, X, Y, epochs=10, learning_rate=1e-2):
+        params_values = self.init_layers()
         history = dict()
         cost_history = []
         accuracy_history = []
 
         for _ in range(epochs):
             Y_hat, memory = self.forward_propagation(
-                X, params_values, nn_architecture)
+                X, params_values)
             cost = self.get_cost_value(Y_hat, Y)
             cost_history.append(cost)
             accuracy = self.get_accuracy_value(Y_hat, Y)
             accuracy_history.append(accuracy)
 
             grads_values = self.backward_propagation(
-                Y_hat, Y, memory, params_values, nn_architecture)
-            params_values = self.update(params_values, grads_values,
-                                        nn_architecture, learning_rate)
+                Y_hat, Y, memory, params_values)
+            params_values = self.update(params_values, grads_values, learning_rate)
 
         history['acc'] = accuracy_history
         history['loss'] = cost_history
@@ -198,10 +198,10 @@ params_values, history = nn.train(
 acc = history['acc']
 loss = history['loss']
 epochs = range(1, len(acc)+1)
-plt.plot(epochs, loss, 'bo',alpha=0.7, label='Training loss')
+plt.plot(epochs, loss, 'bo', alpha=0.7, label='Training loss')
 plt.legend()
 plt.show()
 plt.clf()
-plt.plot(epochs,acc,label = 'Training acc')
+plt.plot(epochs, acc, label='Training acc')
 plt.legend()
 plt.show()

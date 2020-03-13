@@ -86,30 +86,30 @@ print("total test dog images:", len(os.listdir(test_dogs_dir)))
 
 inputs = Input((150, 150, 3))
 Conv_1 = Conv2D(48, (11, 11), strides=4, activation='relu',
-            kernel_initializer='uniform', padding='valid')(inputs)
+                kernel_initializer='uniform', padding='valid')(inputs)
 BN_1 = BatchNormalization()(Conv_1)
 MaxPool_1 = MaxPool2D((3, 3), strides=2, padding='valid')(BN_1)
 
 Conv_2 = Conv2D(128, (5, 5), strides=1, padding='same',
-            activation='relu', kernel_initializer='uniform')(MaxPool_1)
+                activation='relu', kernel_initializer='uniform')(MaxPool_1)
 BN_2 = BatchNormalization()(Conv_2)
 MaxPool_2 = MaxPool2D((3, 3), strides=2, padding='valid')(BN_2)
 
 Conv_3 = Conv2D(192, (3, 3), strides=1, padding='same',
-            activation='relu', kernel_initializer='uniform')(MaxPool_2)
+                activation='relu', kernel_initializer='uniform')(MaxPool_2)
 Conv_4 = Conv2D(192, (3, 3), strides=1, padding='same',
-            activation='relu', kernel_initializer='uniform')(Conv_3)
+                activation='relu', kernel_initializer='uniform')(Conv_3)
 Conv_5 = Conv2D(128, (3, 3), strides=1, padding='same',
-            activation='relu', kernel_initializer='uniform')(Conv_4)
+                activation='relu', kernel_initializer='uniform')(Conv_4)
 MaxPool_3 = MaxPool2D((3, 3), strides=2, padding='valid')(Conv_5)
 
 Flatten_1 = Flatten()(MaxPool_3)
-Dense_1 = Dense(256, activation='relu')(Flatten_1)  # 论文中是2048
+Dense_1 = Dense(256, activation='relu')(Flatten_1)
 Dropout_1 = Dropout(0.5)(Dense_1)
 
-Dense_2 = Dense(256, activation='relu')(Dropout_1)  # 论文中是2048
+Dense_2 = Dense(256, activation='relu')(Dropout_1)
 Dropout_2 = Dropout(0.5)(Dense_2)
-outputs = Dense(1, activation='sigmoid')(Dropout_2)  # 论文中是1000
+outputs = Dense(1, activation='sigmoid')(Dropout_2)
 
 model = Model(inputs=[inputs], outputs=[outputs])
 model.compile(optimizer='adam', loss='binary_crossentropy',
@@ -119,7 +119,7 @@ model.summary()
 earlystopper = EarlyStopping(patience=5, verbose=1)
 checkpointer = ModelCheckpoint('my_alexnet.h5', verbose=1, save_best_only=True)
 
-callbacks=[earlystopper, checkpointer]
+callbacks = [earlystopper, checkpointer]
 model.summary()
 input()
 

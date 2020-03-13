@@ -31,18 +31,16 @@ def train(model):
     x_test = x_test.astype('float32')
     x_test /= 255
     train_datagan = ImageDataGenerator(rescale=1./255, )
-    callbacks = [
-        keras.callbacks.TensorBoard(
-            log_dir='my_log'
-        )
-    ]
 
-    hist = model.fit_generator(train_datagan.flow(x_train, y_train, batch_size=32),
-                               steps_per_epoch=25,
-                               epochs=1, validation_data=(x_test, y_test), shuffle=True,
-                               callbacks=callbacks)
+    callbacks = [keras.callbacks.TensorBoard(log_dir='my_log')]
 
-    history = hist.history
+    history = model.fit_generator(train_datagan.flow(x_train, y_train, batch_size=32),
+                                  steps_per_epoch=25, epochs=1,
+                                  validation_data=(x_test, y_test),
+                                  shuffle=True,
+                                  callbacks=callbacks)
+
+    history = history.history
     acc = history['acc']
     loss = history['loss']
     epochs = range(1, len(acc)+1)
@@ -85,22 +83,17 @@ def build_model():
     x = Conv2D(num_filter, (3, 3), kernel_initializer='he_normal', padding='same',
                strides=1,  kernel_regularizer=l2(weight_decay))(inputs)
 
-    x_list = [x]
-
-    for i in range(3):
+    for _ in range(3):
         cb = conv_block(x, growth_rate, dropout_rate, weight_decay)
-        x_list.append(cb)
         x = concatenate([x, cb], axis=-1)
         num_filter += growth_rate
 
     x = transition_block(
         x, num_filter,  weight_decay=weight_decay)
-
     num_filter = int(num_filter * 0.7)
 
-    for i in range(3):
+    for _ in range(3):
         cb = conv_block(x, growth_rate, dropout_rate, weight_decay)
-        x_list.append(cb)
         x = concatenate([x, cb], axis=-1)
         num_filter += growth_rate
 

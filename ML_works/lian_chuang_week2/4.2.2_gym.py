@@ -17,10 +17,10 @@ class DQN:
     def __init__(self):
         self.model = self.build_model()
         self.target_model = self.build_model()
-        self.update_target_model()
 
         if os.path.exists('dqn.h5'):
             self.model.load_weights('dqn.h5')
+            self.update_target_model()
 
         self.memory_buffer = deque(maxlen=2000)
         self.gamma = 0.95
@@ -43,7 +43,7 @@ class DQN:
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
 
-    def egreedy_action(self, state):
+    def random_choice(self, state):
         if np.random.rand() <= self.epsilon:
              return random.randint(0, 1)
         else:
@@ -53,11 +53,7 @@ class DQN:
     def remember(self, state, action, reward, next_state, done):
         self.memory_buffer.append((state, action, reward, next_state, done))
 
-    def update_epsilon(self):
-        if self.epsilon >= self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-
-    def process_batch(self, batch_size):
+    def gen_batch(self, batch_size):
         data_sample = random.sample(self.memory_buffer, batch_size)
         # tate, action, reward, next_state, done
         states = np.array([data[0] for data in data_sample])
@@ -75,7 +71,7 @@ class DQN:
         return states, y
 
 
-    def train(self, episode, batch):
+    def train(self, episode, batch_size):
         self.model.compile(loss='mse', optimizer=Adam())
 
         train_reward = []
@@ -89,17 +85,18 @@ class DQN:
 
             while not done:
                 x = observation.reshape(-1, 4)
-                action = self.egreedy_action(x)
+                action = self.random_choice(x)
                 observation, reward, done, _ = self.env.step(action)
                 reward_sum += reward
                 self.remember(x[0], action, reward, observation, done)
 
-                if len(self.memory_buffer) > batch:
-                    X, y = self.process_batch(batch)
+                if len(self.memory_buffer) > batch_size:
+                    X, y = self.gen_batch(batch_size)
                     loss = self.model.train_on_batch(X, y)
 
                     count += 1
-                    self.update_epsilon()
+                    if self.epsilon >= self.epsilon_min:
+                        self.epsilon *= self.epsilon_decay
 
                     if count != 0 and count % 20 == 0:
                         self.update_target_model()

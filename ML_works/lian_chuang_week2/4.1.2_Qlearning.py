@@ -25,7 +25,7 @@ class Agent:
     def __init__(self):
         self.alpha = 0.25
         self.gamma = 0.99
-        self.epsilon = 0.9
+        self.epsilon = 1.
         self.position = [0, 0]
         self.q_table = np.zeros((5, 5, 4))  # 5*5 map / 4 direcrions
 
@@ -58,14 +58,15 @@ class Agent:
                 [x_next, y_next] = self.move(movement)
                 next_q = self.q_table[x_next, y_next, :].max()
                 self.q_table[x, y, movement] += self.alpha * (
-                    my_map.map[x_next, y_next]+self.gamma*next_q - self.q_table[x, y, movement])
+                    my_map.map[x_next, y_next]+self.gamma*next_q
+                    - self.q_table[x, y, movement])
                 self.position = [x_next, y_next]
                 if count > 1200:
                     my_map.plot((x_next, y_next), 0.15)
                 else:
                     my_map.plot((x_next, y_next))
                 if self.epsilon > 0.01:
-                    self.epsilon *= 0.999
+                    self.epsilon *= 0.995
             self.position = [0, 0]
 
 
