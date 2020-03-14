@@ -29,13 +29,13 @@ decode = Dense(64, activation='relu')(decode)
 decode = Dense(128, activation='relu')(decode)
 decode = Dense(784, activation='sigmoid')(decode)
 
-autoencoder = Model(inputs=input_img, outputs=decode)
+auto_encoder = Model(inputs=input_img, outputs=decode)
 
 encoder = Model(inputs=input_img, outputs=encoder_output)
 
-autoencoder.compile(optimizer='adam', loss='mse')
+auto_encoder.compile(optimizer='adam', loss='mse')
 
-autoencoder.fit(x_train_nosiy, x_train, epochs=120, batch_size=256, shuffle=True)
+auto_encoder.fit(x_train_nosiy, x_train, epochs=120, batch_size=256, shuffle=True)
 
 
 results = encoder.predict(x_test)
